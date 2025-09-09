@@ -17,14 +17,14 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
+  --background: oklch(15.434% 0.00002 271.152);
+  --foreground: oklch(100% 0.00011 271.152);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.141 0.005 285.823);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.21 0.006 285.885);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary: oklch(100% 0.00011 271.152);
+  --primary-foreground: oklch(15.434% 0.00002 271.152);
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.967 0.001 286.375);
@@ -79,7 +79,7 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: #f6f6f6;
   cursor: pointer;
   transition: border-color 0.25s;
 }
@@ -95,12 +95,43 @@ button:focus-visible {
   :root {
     color: #213547;
     background-color: #ffffff;
+    --background: oklch(100% 0.00011 271.152);
+    --foreground: oklch(15.434% 0.00002 271.152);
+    --card: oklch(0.141 0.005 285.823);
+    --card-foreground: oklch(1 0 0);
+    --popover: oklch(0.141 0.005 285.823);
+    --popover-foreground: oklch(1 0 0);
+    --primary: oklch(15.434% 0.00002 271.152);
+    --primary-foreground: oklch(100% 0.00011 271.152);
+    --secondary: oklch(0.21 0.006 285.885);
+    --secondary-foreground: oklch(0.967 0.001 286.375);
+    --muted: oklch(0.552 0.016 285.938);
+    --muted-foreground: oklch(26.448% 0.00003 271.152);
+    --accent: oklch(0.21 0.006 285.885);
+    --accent-foreground: oklch(0.967 0.001 286.375);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(30.919% 0.00004 271.152);
+    --input: oklch(52.959% 0.00248 15.899);
+    --ring: oklch(0.705 0.015 286.067);
+    --chart-1: oklch(0.646 0.222 41.116);
+    --chart-2: oklch(0.6 0.118 184.704);
+    --chart-3: oklch(0.398 0.07 227.392);
+    --chart-4: oklch(0.828 0.189 84.429);
+    --chart-5: oklch(0.769 0.188 70.08);
+    --sidebar: hsl(0 0% 98%);
+    --sidebar-foreground: hsl(240 5.3% 26.1%);
+    --sidebar-primary: hsl(240 5.9% 10%);
+    --sidebar-primary-foreground: hsl(0 0% 98%);
+    --sidebar-accent: hsl(240 4.8% 95.9%);
+    --sidebar-accent-foreground: hsl(240 5.9% 10%);
+    --sidebar-border: hsl(220 13% 91%);
+    --sidebar-ring: hsl(217.2 91.2% 59.8%);
   }
   a:hover {
     color: #747bff;
   }
   button {
-    background-color: #f9f9f9;
+    background-color: #1b1b1b;
   }
 }
 
