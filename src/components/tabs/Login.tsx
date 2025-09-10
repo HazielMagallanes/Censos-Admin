@@ -39,7 +39,7 @@ export function Login({
 
     setLoading(true);
     try {
-			const response = await axios.post('http://172.19.214.85:3000/auth/login', { correo_electronico: email })
+			const response = await axios.post('/login', { correo_electronico: email })
 			if (response) navigate("/");
     } catch (error) {
       setError(axios.isAxiosError(error) ? error.response?.data.message : "No se pudo establecer la conexión con el servidor.");
@@ -72,7 +72,7 @@ export function Login({
             <h1 className="text-xl font-bold text-center">¡Bienvenido de nuevo!</h1>
             <div className="text-center text-sm">
               ¿No tienes una cuenta?{" "}
-              <a href="#" className="underline underline-offset-4">
+              <a onClick={() => navigate("/sign-up")} className="underline underline-offset-4 cursor-pointer">
                 Registrarse
               </a>
             </div>
@@ -136,10 +136,6 @@ export function Login({
           </div>
         </div>
       </form>
-      <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-        Al clickear continuar, estas aceptando nuestros <a href="#">Terminos de servicio</a>{" "}
-        y <a href="#">Política de privacidad</a>.
-      </div>
     </div>
     </div>
   )
