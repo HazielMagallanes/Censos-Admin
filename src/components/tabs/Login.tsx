@@ -39,7 +39,7 @@ export function Login({
 
     setLoading(true);
     try {
-			const response = await axios.post('/login', { correo_electronico: email })
+			const response = await axios.post('/auth/login', { correo_electronico: email })
 			if (response) navigate("/");
     } catch (error) {
       setError(axios.isAxiosError(error) ? error.response?.data.message : "No se pudo establecer la conexión con el servidor.");

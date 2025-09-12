@@ -6,7 +6,7 @@ import { SidebarProvider } from './components/ui/sidebar';
 import axios from 'axios';
 const App: React.FC = () => {
   axios.defaults.withCredentials = true;
-  axios.defaults.baseURL = 'http://172.19.214.85:3000/auth';
+  axios.defaults.baseURL = 'https://localhost/api';
   
   return (
     <>

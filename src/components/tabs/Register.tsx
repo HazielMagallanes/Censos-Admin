@@ -43,7 +43,7 @@ export function Register({
 
     setLoading(true);
     try {
-		const response = await axios.post('/signup', form)
+		const response = await axios.post('/auth/signup', form)
 		if (response) navigate("/");
     } catch (error) {
       setError(axios.isAxiosError(error) ? error.response?.data.message : "No se pudo establecer la conexión con el servidor.");
