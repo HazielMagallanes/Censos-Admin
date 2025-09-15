@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { useNavigate } from "react-router"
 import { useState } from "react"
 import axios from 'axios'
+import { useAuth } from "../providers/AuthProvider"
 
 
 
@@ -19,6 +20,7 @@ export function Login({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const { setToken } = useAuth()
   const navigate = useNavigate();
 
   const validate = async () => {
@@ -40,7 +42,10 @@ export function Login({
     setLoading(true);
     try {
 			const response = await axios.post('/auth/login', { correo_electronico: email })
-			if (response) navigate("/");
+			if (response) {
+        setToken(response.data.data.token);
+        navigate("/", {replace: true});
+      }
     } catch (error) {
       setError(axios.isAxiosError(error) ? error.response?.data.message : "No se pudo establecer la conexión con el servidor.");
       setSuccess(null);
