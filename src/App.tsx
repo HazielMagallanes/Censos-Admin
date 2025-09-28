@@ -5,7 +5,7 @@ import Routes from './components/routing/Routes';
 
 const App: React.FC = () => {
   axios.defaults.withCredentials = true;
-  axios.defaults.baseURL = 'http://localhost/api';
+  axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
 
   return (
     <>

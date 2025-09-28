@@ -77,7 +77,7 @@ export function Login({
             <h1 className="text-xl font-bold text-center">¡Bienvenido de nuevo!</h1>
             <div className="text-center text-sm">
               ¿No tienes una cuenta?{" "}
-              <a onClick={() => navigate("/sign-up")} className="underline underline-offset-4 cursor-pointer">
+              <a onClick={() => navigate("/register")} className="underline underline-offset-4 cursor-pointer">
                 Registrarse
               </a>
             </div>
