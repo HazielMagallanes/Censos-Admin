@@ -4,6 +4,7 @@ import { useAuth } from "../providers/AuthProvider";
 import { Login } from "../tabs/Login";
 import { Register } from "../tabs/Register";
 import MainPanel from "../tabs/MainPanel";
+import CRUDpage from "../tabs/CRUDpage";
 
 const Routes: React.FC = () => {
   const { token } = useAuth();
@@ -33,6 +34,10 @@ const Routes: React.FC = () => {
           path: "/",
           element: <MainPanel />,
         },
+        {
+          path: "/crud",
+          element: <CRUDpage />,
+        }
       ],
     },
   ];
