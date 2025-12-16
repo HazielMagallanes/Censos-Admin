@@ -1,6 +1,6 @@
 import { GalleryVerticalEnd } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/shadcn/button"
 import { useNavigate } from "react-router" // Nota: en v6 es 'react-router-dom', verifica tu import
 import { useState } from "react"
 import axios from 'axios'

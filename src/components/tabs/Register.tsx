@@ -1,9 +1,9 @@
 import { GalleryVerticalEnd } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/shadcn/button"
+import { Input } from "@/components/ui/shadcn/input"
+import { Label } from "@/components/ui/shadcn/label"
 import { useNavigate } from "react-router"
 import { useState } from "react"
 import axios from 'axios'
