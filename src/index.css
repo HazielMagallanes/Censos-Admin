@@ -17,7 +17,7 @@
   /* Base Variables */
   --radius: 0.5rem;
   
-  /* Light Mode (Default - Matches Screenshot) */
+  /* Light Mode (Default) */
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
   
@@ -27,7 +27,7 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.129 0.042 264.695);
   
-  /* UPDATED: Primary is now Sky Blue to match screenshot */
+  /* COLOOOrs */
   --primary: oklch(0.56 0.16 245); 
   --primary-foreground: oklch(0.985 0 0);
   
@@ -47,13 +47,13 @@
   --input: oklch(0.922 0.004 286.32);
   --ring: oklch(0.56 0.16 245);
   
-  /* Sidebar Variables (White background as per screenshot) */
+  /* Sidebar Variables */
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.56 0.16 245);
+  --sidebar-primary: #238DCA;
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.205 0.042 264.695);
+  --sidebar-accent: #0067B1;
+  --sidebar-accent-foreground: #FFFFFF;
   --sidebar-border: oklch(0.922 0.004 286.32);
   --sidebar-ring: oklch(0.56 0.16 245);
 

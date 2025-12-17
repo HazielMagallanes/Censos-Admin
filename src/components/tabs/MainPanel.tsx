@@ -1,26 +1,36 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Map, FileDown, ChevronDown, Loader2, ChevronUp } from "lucide-react";
+import { Map, FileDown, ChevronDown, Loader2, ChevronUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/shadcn/button";
 import { DashboardHeader } from "../ui/own/DashboardHeader";
 
-// Definimos la estructura de datos basada en lo que devuelve tu census.service.ts
+// --- INTERFACES ---
 interface Creator {
     nombre: string;
     apellido: string;
     correo_electronico: string;
 }
 
+interface MunicipioData {
+    nombre: string;
+}
+
 interface CensoData {
     nombre: string;
     anio: number;
+    municipio: MunicipioData; 
 }
 
+interface TipoData {
+    id_tipo: number;
+    nombre: string;
+}
+interface AtributoDetalle {
+    nombre: string;
+    tipo: TipoData;
+}
 interface AtributoRespuesta {
-    atributo: {
-        nombre: string;
-        tipo: string; // Esto viene de tu relación con 'Tipo'
-    };
+    atributo: AtributoDetalle;
     valor: string;
 }
 
@@ -35,20 +45,33 @@ interface RegistroCensal {
     atributos: AtributoRespuesta[]; 
 }
 
+interface MetaData {
+    total: number;
+    page: number;
+    last_page: number;
+}
+
 const MainPanel: React.FC = () => {
     const [registros, setRegistros] = useState<RegistroCensal[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-
+    // Paginación
+    const [meta, setMeta] = useState<MetaData>({ total: 0, page: 1, last_page: 1 });
+    const [page, setPage] = useState<number>(1);
+    const LIMIT = 10;
     // Filtering
     const [dateOrder, setDateOrder] = useState<'desc' | 'asc'>('desc');
 
     // Fetch
     useEffect(() => {
         const fetchRegistros = async () => {
+            setLoading(true);
             try {
-                const response = await axios.get('/census/uploads'); 
-                if (response.data) setRegistros(response.data.uploads);
+                const response = await axios.get(`/census/uploads?page=${page}&limit=${LIMIT}`); 
+                if (response.data) {
+                    setRegistros(response.data.uploads);
+                    setMeta(response.data.meta);
+                }
             } catch (err) {
                 console.error(err);
                 setError("Error al cargar los registros censales.");
@@ -57,7 +80,28 @@ const MainPanel: React.FC = () => {
             }
         }
         fetchRegistros();
-    }, []);
+    }, [page]);
+
+    const handlePageChange = (newPage: number) => {
+        if (newPage >= 1 && newPage <= meta.last_page) setPage(newPage);
+    };
+
+    // Generador de números de página 
+    const getPageNumbers = () => {
+        const pages = [];
+        const { last_page, page } = meta;
+        
+        // Siempre mostrar la primera página
+        pages.push(1);
+        if (page > 3) pages.push('...');
+        // Rango alrededor de la página actual
+        for (let i = Math.max(2, page - 1); i <= Math.min(last_page - 1, page + 1); i++) pages.push(i);
+        if (page < last_page - 2) pages.push('...');
+        // Siempre mostrar la ultima
+        if (last_page > 1) pages.push(last_page);
+
+        return pages;
+    };
 
     // Formateador de fecha: dd / mm / aaaa
     const formatDate = (isoString: string) => {
@@ -125,15 +169,13 @@ const MainPanel: React.FC = () => {
                                             </div>
                                         </th>
                                         <th className="p-3 font-medium">
-                                            <div className="bg-slate-200 p-1 rounded text-center text-slate-500 flex justify-between px-2 items-center" 
+                                            <div className="bg-slate-200 p-1 rounded text-center text-slate-500 flex justify-between px-2 items-center cursor-pointer" 
                                             onClick={() => setDateOrder(dateOrder === 'desc' ? 'asc' : 'desc')}>
                                                 Fecha {dateOrder === 'desc' ? <ChevronDown className="h-3 w-3"/> : <ChevronUp className="h-3 w-3"/>}
                                             </div>
                                         </th>
                                         <th className="p-3 font-medium">
-                                            <div className="bg-slate-200 p-1 rounded text-center text-slate-500">
-                                                Municipio / Ubicación
-                                            </div>
+                                            <input className="bg-slate-200 p-1 rounded text-left text-slate-500 flex justify-between px-2 items-center w-full" placeholder="Municipio" />
                                         </th>
                                         <th className="p-3 font-medium">
                                             <input className="bg-slate-200 p-1 rounded text-left text-slate-500 flex justify-between px-2 items-center w-full" placeholder="Usuario (Email)" />
@@ -163,12 +205,12 @@ const MainPanel: React.FC = () => {
                                                     {formatDate(row.fecha)}
                                                 </td>
                                                 <td className="p-4 text-slate-600">
-                                                    {row.ubicacion || "Sin ubicación especificada"}
+                                                    {row.censo.municipio.nombre}
                                                 </td>
                                                 <td className="p-4 text-slate-600">
                                                     <div className="flex flex-col">
                                                         <span className="text-xs font-bold text-slate-700">
-                                                            {row.creator.nombre} {row.creator.apellido}
+                                                            {row.creator.nombre}{row.creator.apellido ? ` ${row.creator.apellido}`: ''}
                                                         </span>
                                                         <span className="text-xs text-slate-400">
                                                             {row.creator.correo_electronico}
@@ -188,15 +230,51 @@ const MainPanel: React.FC = () => {
                         </div>
                     )}
                     
-                    {/* Pagination Footer (Estático por ahora, funcionalidad requiere backend pagination) */}
-                    <div className="flex items-center justify-center gap-2 border-t p-4">
-                        <Button variant="ghost" size="sm" disabled>&lt;</Button>
-                        <Button variant="outline" size="sm" className="bg-slate-100">1</Button>
-                        <span className="text-slate-400 text-xs">Mostrando {registros.length} resultados</span>
-                        <Button variant="ghost" size="sm" disabled>&gt;</Button>
-                    </div>
-                </div>
+                    {/* --- PAGINATION FOOTER --- */}
+                    {!loading && registros.length > 0 && (
+                        <div className="flex items-center justify-between border-t p-4 bg-slate-50">
+                            <div className="text-xs text-slate-500">
+                                Mostrando pagina {meta.page} de {meta.last_page} (Total: {meta.total} registros)
+                            </div>
+                            
+                            <div className="flex items-center gap-1">
+                                <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={() => handlePageChange(page - 1)}
+                                    disabled={page === 1}
+                                >
+                                    <ChevronLeft className="h-4 w-4" />
+                                </Button>
 
+                                {getPageNumbers().map((p, idx) => (
+                                    p === '...' ? (
+                                        <span key={`ellipsis-${idx}`} className="px-2 text-slate-400">...</span>
+                                    ) : (
+                                        <Button
+                                            key={`page-${p}`}
+                                            variant={p === page ? "secondary" : "ghost"}
+                                            size="sm"
+                                            className={p === page ? "bg-slate-200 font-bold" : ""}
+                                            onClick={() => handlePageChange(p as number)}
+                                        >
+                                            {p}
+                                        </Button>
+                                    )
+                                ))}
+
+                                <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={() => handlePageChange(page + 1)}
+                                    disabled={page === meta.last_page}
+                                >
+                                    <ChevronRight className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </main>
         </div>
     )
