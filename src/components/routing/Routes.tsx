@@ -2,7 +2,6 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { useAuth } from "../providers/AuthProvider";
 import { Login } from "../tabs/Login";
-import { Register } from "../tabs/Register";
 import MainPanel from "../tabs/MainPanel";
 
 const Routes: React.FC = () => {
@@ -42,10 +41,6 @@ const Routes: React.FC = () => {
     {
       path: "/",
       element: <Login />,
-    },
-    {
-      path: "/register",
-      element: <Register />,
     },
   ];
 

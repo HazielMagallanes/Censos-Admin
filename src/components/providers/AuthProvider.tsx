@@ -1,33 +1,54 @@
 import axios from "axios";
-import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useLayoutEffect,
+  type PropsWithChildren,
+} from "react";
 
-const AuthContext = createContext<AuthContextProvider>({token: null, setToken: () => null});
+const AuthContext = createContext<AuthContextProvider>({
+  token: null,
+  setToken: () => null,
+});
 
 interface AuthContextProvider {
-    token: string | null;
-    setToken: (newToken: string) => void; 
+  token: string | null;
+  setToken: (newToken: string | null) => void;
 }
 
 const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
-  // State to hold the authentication token
-  const [token, setToken_] = useState(sessionStorage.getItem("token"));
+  // Inicializamos leyendo de sessionStorage para evitar flash de "no logueado"
+  const [token, setToken_] = useState<string | null>(() => sessionStorage.getItem("token"));
 
-  // Function to set the authentication token
-  const setToken = (newToken: string) => {
+  const setToken = (newToken: string | null) => {
     setToken_(newToken);
   };
+  
+  useLayoutEffect(() => {
+    // Configuramos el interceptor UNA sola vez o cuando cambie el token
+    const authInterceptor = axios.interceptors.request.use((config) => {
+      config.headers.Authorization = `Bearer ${token}`;
+      return config;
+    });
 
+    return () => {
+      // Limpiamos el interceptor si el componente se desmonta para no acumularlos
+      axios.interceptors.request.eject(authInterceptor);
+    };
+  }, [token]);
+
+  // Sincronización con SessionStorage
   useEffect(() => {
     if (token) {
-      axios.defaults.headers.common["Authorization"] = "Bearer " + token;
-      sessionStorage.setItem('token', token);
+      sessionStorage.setItem("token", token);
     } else {
-      delete axios.defaults.headers.common["Authorization"];
-      sessionStorage.removeItem('token')
+      sessionStorage.removeItem("token");
     }
   }, [token]);
 
-  // Memoized value of the authentication context
   const contextValue = useMemo(
     () => ({
       token,
@@ -36,7 +57,6 @@ const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
     [token]
   );
 
-  // Provide the authentication context to the children components
   return (
     <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
