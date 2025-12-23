@@ -61,13 +61,14 @@ const MainPanel: React.FC = () => {
     const LIMIT = 10;
     // Filtering
     const [dateOrder, setDateOrder] = useState<'desc' | 'asc'>('desc');
-
+    const [mailFilter, setMailFilter] = useState<string>('');
+    const [municipalityFilter, setMunicipalityFilter] = useState<string>('');
     // Fetch
     useEffect(() => {
         const fetchRegistros = async () => {
             setLoading(true);
             try {
-                const response = await axios.get(`/census/uploads?page=${page}&limit=${LIMIT}`); 
+                const response = await axios.get(`/census/uploads?page=${page}&limit=${LIMIT}&date=${dateOrder}&email=${mailFilter}&municipality=${municipalityFilter}`); 
                 if (response.data) {
                     setRegistros(response.data.uploads);
                     setMeta(response.data.meta);
@@ -80,7 +81,7 @@ const MainPanel: React.FC = () => {
             }
         }
         fetchRegistros();
-    }, [page]);
+    }, [page, dateOrder, mailFilter]);
 
     const handlePageChange = (newPage: number) => {
         if (newPage >= 1 && newPage <= meta.last_page) setPage(newPage);

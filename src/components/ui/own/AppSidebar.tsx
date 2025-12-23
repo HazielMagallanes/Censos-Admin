@@ -19,6 +19,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/shadcn/sidebar"
+import { useAuth } from "@/components/providers/AuthProvider"
 
 // Menu items based on your screenshot
 const items = [
@@ -56,6 +57,7 @@ const items = [
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  if (!useAuth().token) return;
   return (
     <Sidebar {...props}>
       <SidebarHeader className="p-4">
