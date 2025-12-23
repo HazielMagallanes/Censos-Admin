@@ -118,7 +118,7 @@ const MainPanel: React.FC = () => {
         <div className="flex flex-col w-full h-full bg-slate-50">
             
             {/* Header reutilizable */}
-            <DashboardHeader userRole="Admin" userName="Haziel" />
+            <DashboardHeader />
 
             {/* --- MAIN CONTENT AREA --- */}
             <main className="flex-1 p-6 overflow-auto">
