@@ -51,6 +51,15 @@ interface MetaData {
     last_page: number;
 }
 
+const TempJSONView: React.FC<{ data: RegistroCensal | undefined }> = ({ data }) => {
+    if (!data) return;
+    return (
+        <pre className="bg-slate-100 p-4 rounded text-xs overflow-auto">
+            {JSON.stringify(data, null, 2)}
+        </pre>
+    );
+}
+
 const MainPanel: React.FC = () => {
     const [registros, setRegistros] = useState<RegistroCensal[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
@@ -63,6 +72,9 @@ const MainPanel: React.FC = () => {
     const [dateOrder, setDateOrder] = useState<'desc' | 'asc'>('desc');
     const [mailFilter, setMailFilter] = useState<string>('');
     const [municipalityFilter, setMunicipalityFilter] = useState<string>('');
+    // Modal state
+    const [open, setOpen] = useState<boolean>(false);
+    const [selected, setSelected] = useState<number | undefined>();
     // Fetch
     useEffect(() => {
         const fetchRegistros = async () => {
@@ -117,7 +129,19 @@ const MainPanel: React.FC = () => {
 
     return (
         <div className="flex flex-col w-full h-full bg-slate-50">
-            
+            {open && registros.length > 0 && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-96 overflow-auto">
+                        <div className="p-4 border-b flex justify-between items-center">
+                            <h2 className="text-lg font-semibold">Data Preview</h2>
+                            <button className="text-slate-500 hover:text-slate-700" onClick={() => setOpen(false)}>✕</button>
+                        </div>
+                        <div className="p-4">
+                            <TempJSONView data={registros[selected ?? 0]} />
+                        </div>
+                    </div>
+                </div>
+            )}
             {/* Header reutilizable */}
             <DashboardHeader />
 
@@ -176,10 +200,10 @@ const MainPanel: React.FC = () => {
                                             </div>
                                         </th>
                                         <th className="p-3 font-medium">
-                                            <input className="bg-slate-200 p-1 rounded text-left text-slate-500 flex justify-between px-2 items-center w-full" placeholder="Municipio" />
+                                            <input className="bg-slate-200 p-1 rounded text-left text-slate-500 flex justify-between px-2 items-center w-full" placeholder="Municipio" onChange={(e) => setMunicipalityFilter(e.target.value)}/>
                                         </th>
                                         <th className="p-3 font-medium">
-                                            <input className="bg-slate-200 p-1 rounded text-left text-slate-500 flex justify-between px-2 items-center w-full" placeholder="Usuario (Email)" />
+                                            <input className="bg-slate-200 p-1 rounded text-left text-slate-500 flex justify-between px-2 items-center w-full" placeholder="Usuario (Email)" onChange={(e) => setMailFilter(e.target.value)} />
                                         </th>
                                         <th className="p-3 font-medium">
                                             <input className="bg-slate-200 p-1 rounded text-left text-slate-500 flex justify-between px-2 items-center w-full" placeholder="Censo" />
@@ -195,7 +219,10 @@ const MainPanel: React.FC = () => {
                                         </tr>
                                     ) : (
                                         registros.map((row, index) => (
-                                            <tr key={row.id_registro} className="hover:bg-slate-50 transition-colors">
+                                            <tr key={row.id_registro} className="hover:bg-slate-50 transition-colors" onClick={() => {
+                                                setSelected(index);
+                                                setOpen(true);
+                                            }}>
                                                 <td className="p-4 text-center text-slate-500 font-mono">
                                                     {index + 1}
                                                 </td>
