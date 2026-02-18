@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { SidebarTrigger } from "@/components/ui/shadcn/sidebar";
 import { Button } from "@/components/ui/shadcn/button";
 import { HelpCircle, Bell, ChevronDown, Loader2 } from "lucide-react";
 import { useRole } from "@/components/providers/RoleProvider";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 export function DashboardHeader() {
   const [userName, setUserName] = useState<string>("Cargando...");
@@ -32,10 +32,10 @@ export function DashboardHeader() {
     }
   };
 
+  if (!useAuth().token) return;
   return (
     <header className="flex h-16 items-center justify-between border-b bg-white px-6">
       <div className="flex items-center gap-4">
-        <SidebarTrigger />
         <h1 className="text-2xl font-bold text-slate-800">S.C.F</h1>
       </div>
 

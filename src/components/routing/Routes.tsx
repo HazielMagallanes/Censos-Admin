@@ -3,6 +3,7 @@ import { ProtectedRoute } from "./ProtectedRoute";
 import { useAuth } from "../providers/AuthProvider";
 import { Login } from "../tabs/Login";
 import MainPanel from "../tabs/MainPanel";
+import { Panel } from "../ui/own/Panel";
 
 const Routes: React.FC = () => {
   const { token } = useAuth();
@@ -30,7 +31,7 @@ const Routes: React.FC = () => {
       children: [
         {
           path: "/",
-          element: <MainPanel />,
+          element: <Panel><MainPanel /></Panel>,
         },
       ],
     },
@@ -40,7 +41,7 @@ const Routes: React.FC = () => {
   const routesForNotAuthenticatedOnly = [
     {
       path: "/",
-      element: <Login />,
+      element: <Panel><Login /></Panel> ,
     },
   ];
 

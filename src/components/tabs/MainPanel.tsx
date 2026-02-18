@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Map, FileDown, ChevronDown, Loader2, ChevronUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/shadcn/button";
-import { DashboardHeader } from "../ui/own/DashboardHeader";
 
 // --- INTERFACES ---
 interface Creator {
@@ -142,8 +141,6 @@ const MainPanel: React.FC = () => {
                     </div>
                 </div>
             )}
-            {/* Header reutilizable */}
-            <DashboardHeader />
 
             {/* --- MAIN CONTENT AREA --- */}
             <main className="flex-1 p-6 overflow-auto">
