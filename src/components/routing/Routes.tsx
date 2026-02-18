@@ -4,6 +4,7 @@ import { useAuth } from "../providers/AuthProvider";
 import { Login } from "../tabs/Login";
 import MainPanel from "../tabs/MainPanel";
 import { Panel } from "../ui/own/Panel";
+import { RecordDetails } from "../tabs/RecordDetails";
 
 const Routes: React.FC = () => {
   const { token } = useAuth();
@@ -33,6 +34,10 @@ const Routes: React.FC = () => {
           path: "/",
           element: <Panel><MainPanel /></Panel>,
         },
+        {
+          path: "/registro/:id",
+          element: <Panel><RecordDetails /></Panel>,
+        }
       ],
     },
   ];
