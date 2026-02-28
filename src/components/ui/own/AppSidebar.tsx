@@ -30,7 +30,7 @@ const items = [
   },
   {
     title: "Territorio",
-    url: "#",
+    url: "territorio",
     icon: Building2,
   },
   {
