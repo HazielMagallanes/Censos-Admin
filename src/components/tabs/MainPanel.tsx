@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Map, FileDown, ChevronDown, Loader2, ChevronLeft, ChevronRight, User } from "lucide-react";
 import { Button } from "@/components/ui/shadcn/button";
+import { useNavigate } from "react-router";
 
 // --- INTERFACES ---
 interface Creator {
@@ -50,20 +51,11 @@ interface MetaData {
     last_page: number;
 }
 
-const TempJSONView: React.FC<{ data: RegistroCensal | undefined }> = ({ data }) => {
-    if (!data) return null;
-    return (
-        <pre className="bg-slate-100 p-4 rounded text-xs overflow-auto">
-            {JSON.stringify(data, null, 2)}
-        </pre>
-    );
-}
-
 const MainPanel: React.FC = () => {
     const [registros, setRegistros] = useState<RegistroCensal[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-    
+    const navigate = useNavigate();
     // Paginación
     const [meta, setMeta] = useState<MetaData>({ total: 0, page: 1, last_page: 1 });
     const [page, setPage] = useState<number>(1);
@@ -76,10 +68,6 @@ const MainPanel: React.FC = () => {
     const [municipalityIdFilter, setMunicipalityIdFilter] = useState<string>('');
     const [censusIdFilter, setCensusIdFilter] = useState<string>('');
     const [statusFilter, setStatusFilter] = useState<string>('');
-
-    // Modal state
-    const [open, setOpen] = useState<boolean>(false);
-    const [selected, setSelected] = useState<number | undefined>();
 
     // Fetch con Debounce
     useEffect(() => {
@@ -156,20 +144,6 @@ const MainPanel: React.FC = () => {
 
     return (
         <div className="flex flex-col w-full h-full bg-slate-50">
-            {open && registros.length > 0 && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[80vh] overflow-auto flex flex-col">
-                        <div className="p-4 border-b flex justify-between items-center bg-white sticky top-0">
-                            <h2 className="text-lg font-semibold">Data Preview</h2>
-                            <button className="text-slate-500 hover:text-slate-700 font-bold" onClick={() => setOpen(false)}>✕</button>
-                        </div>
-                        <div className="p-4 overflow-auto">
-                            <TempJSONView data={registros[selected ?? 0]} />
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* --- MAIN CONTENT AREA --- */}
             <main className="flex-1 p-6 overflow-auto">
                 
@@ -283,10 +257,7 @@ const MainPanel: React.FC = () => {
                                         <tr
                                         key={row.id_registro}
                                         className="hover:bg-slate-50 transition-colors cursor-pointer"
-                                        onClick={() => {
-                                            setSelected(index);
-                                            setOpen(true);
-                                        }}
+                                        onClick={() => navigate(`/registro/${row.id_registro}`)}
                                         >
                                             <td className="p-4 text-center text-slate-500 font-mono">
                                                 {((page - 1) * LIMIT) + index + 1}
