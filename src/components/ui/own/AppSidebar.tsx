@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useLocation, Link } from "react-router-dom"
 import {
   Home,
   Building2,
@@ -25,39 +26,48 @@ import { useAuth } from "@/components/providers/AuthProvider"
 const items = [
   {
     title: "Inicio",
-    url: "#",
+    url: "/",
     icon: Home,
+    enabled: true,
   },
   {
     title: "Territorio",
-    url: "territorio",
+    url: "/territorio",
     icon: Building2,
+    enabled: true,
   },
   {
     title: "Atributos y Plantillas",
-    url: "#",
+    url: null,
     icon: FileText,
+    enabled: false,
   },
   {
     title: "Formularios y Censos",
-    url: "#",
+    url: "/formulario",
     icon: ClipboardList,
+    enabled: true,
   },
   {
     title: "Usuarios y Permisos",
-    url: "#",
+    url: null,
     icon: Users,
+    enabled: false,
   },
   {
     title: "Datos y Reportes",
-    url: "#",
+    url: null,
     icon: BarChart3,
-    isActive: true, // Set active to match screenshot
+    enabled: false,
   },
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  if (!useAuth().token) return;
+  const { token } = useAuth()
+  const location = useLocation()
+
+  if (!token) return;
+
   return (
     <Sidebar {...props}>
       <SidebarHeader className="p-4">
@@ -69,25 +79,45 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       
       <SidebarContent className="px-2">
         <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title} className="mb-2">
-              <SidebarMenuButton 
-                asChild 
-                isActive={item.isActive}
-                // Custom styling to mimic the blue buttons in the screenshot
-                className={`h-12 justify-start rounded-md px-4 text-base font-medium transition-colors ${
-                  item.isActive 
-                    ? "bg-sky-700 text-white hover:bg-sky-800 hover:text-white" 
-                    : "bg-sky-500 text-white hover:bg-sky-600 hover:text-white"
-                }`}
-              >
-                <a href={item.url} className="flex items-center gap-3">
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.title}</span>
-                </a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {items.map((item) => {
+            const isActive = location.pathname === item.url
+            
+            // Si el item no está habilitado, renderizarlo como deshabilitado
+            if (!item.enabled) {
+              return (
+                <SidebarMenuItem key={item.title} className="mb-2">
+                  <SidebarMenuButton 
+                    disabled
+                    className="h-12 justify-start rounded-md px-4 text-base font-medium transition-colors bg-slate-400 text-white cursor-not-allowed opacity-60"
+                  >
+                    <div className="flex items-center gap-3">
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.title}</span>
+                    </div>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )
+            }
+
+            return (
+              <SidebarMenuItem key={item.title} className="mb-2">
+                <SidebarMenuButton 
+                  asChild 
+                  isActive={isActive}
+                  className={`h-12 justify-start rounded-md px-4 text-base font-medium transition-colors ${
+                    isActive
+                      ? "bg-sky-700 text-white hover:bg-sky-800 hover:text-white" 
+                      : "bg-sky-500 text-white hover:bg-sky-600 hover:text-white"
+                  }`}
+                >
+                  <Link to={item.url || ""} className="flex items-center gap-3">
+                    <item.icon className="h-5 w-5" />
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          })}
         </SidebarMenu>
       </SidebarContent>
 
