@@ -15,10 +15,7 @@ axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
 // El orden es: El primero de la lista será el "Padre Supremo" (el más externo).
 const composeProviders = (...providers: React.ComponentType<PropsWithChildren<unknown>>[]) => {
   return ({ children }: PropsWithChildren) => {
-    return providers.reduceRight(
-      (acc: ReactNode, Provider) => <Provider>{acc}</Provider>,
-      children
-    );
+    return providers.reduceRight((acc: ReactNode, Provider) => <Provider>{acc}</Provider>, children);
   };
 };
 
@@ -27,9 +24,7 @@ const composeProviders = (...providers: React.ComponentType<PropsWithChildren<un
 // Esto mantiene la lista de composición limpia.
 
 const GoogleAuthProviderWrapper: React.FC<PropsWithChildren> = ({ children }) => (
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID}>
-        {children}
-    </GoogleOAuthProvider>
+  <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID}>{children}</GoogleOAuthProvider>
 );
 
 // --- MAIN EXPORT ---
@@ -41,6 +36,6 @@ export const AppProviders = composeProviders(
   GoogleAuthProviderWrapper,
   AuthProvider,
   RoleProvider,
-  SidebarProvider
+  SidebarProvider,
   // Futuro ej: QueryClientProvider, ThemeProvider, ToastProvider...
 );

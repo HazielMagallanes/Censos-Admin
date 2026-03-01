@@ -1,5 +1,5 @@
 import * as React from "react"
-import { useLocation, Link } from "react-router-dom"
+import { useLocation, Link, useNavigate } from "react-router-dom"
 import {
   Home,
   Building2,
@@ -32,7 +32,7 @@ const items = [
   },
   {
     title: "Territorio",
-    url: "/territorio",
+    url: "/territorios",
     icon: Building2,
     enabled: true,
   },
@@ -44,7 +44,7 @@ const items = [
   },
   {
     title: "Formularios y Censos",
-    url: "/formulario",
+    url: "/formularios",
     icon: ClipboardList,
     enabled: true,
   },
@@ -65,7 +65,8 @@ const items = [
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { token } = useAuth()
   const location = useLocation()
-
+  const navigator = useNavigate()
+  
   if (!token) return;
 
   return (
@@ -126,6 +127,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton 
               className="h-12 justify-start rounded-md bg-sky-500 px-4 text-base font-medium text-white hover:bg-sky-600 hover:text-white"
+              onClick={() => navigator("/cuenta")}
             >
               <User className="mr-2 h-5 w-5" />
               <span>Mi cuenta</span>

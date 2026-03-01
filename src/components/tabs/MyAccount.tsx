@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Map, FileDown, ChevronDown, Loader2, ChevronLeft, ChevronRight, User } from 'lucide-react';
+import { Map, FileDown, ChevronDown, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/shadcn/button';
 import { useNavigate } from 'react-router';
 
@@ -51,7 +51,7 @@ interface MetaData {
   last_page: number;
 }
 
-const MainPanel: React.FC = () => {
+const MyAccount: React.FC = () => {
   const [registros, setRegistros] = useState<RegistroCensal[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,10 +64,10 @@ const MainPanel: React.FC = () => {
   // Filtering States
   const [idFilter, setIdFilter] = useState<string>('');
   const [dateFilter, setDateFilter] = useState<string>('');
-  const [mailFilter, setMailFilter] = useState<string>('');
   const [municipalityIdFilter, setMunicipalityIdFilter] = useState<string>('');
   const [censusIdFilter, setCensusIdFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [approvalDateFilter, setApprovalDateFilter] = useState<string>('');
 
   // Fetch con Debounce
   useEffect(() => {
@@ -78,11 +78,11 @@ const MainPanel: React.FC = () => {
         const params = new URLSearchParams({
           page: page.toString(),
           limit: LIMIT.toString(),
+          onlyOwn: 'true',
         });
 
         if (idFilter) params.append('id', idFilter);
         if (dateFilter) params.append('date', dateFilter);
-        if (mailFilter) params.append('mail', mailFilter);
         if (municipalityIdFilter) params.append('municipalityId', municipalityIdFilter);
         if (censusIdFilter) params.append('censusId', censusIdFilter);
         if (statusFilter) params.append('status', statusFilter);
@@ -106,12 +106,12 @@ const MainPanel: React.FC = () => {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [page, idFilter, dateFilter, mailFilter, municipalityIdFilter, censusIdFilter, statusFilter]);
+  }, [page, idFilter, dateFilter, approvalDateFilter, municipalityIdFilter, censusIdFilter, statusFilter]);
 
   // Resetea a la página 1 cada vez que un filtro cambia
   useEffect(() => {
     setPage(1);
-  }, [idFilter, dateFilter, mailFilter, municipalityIdFilter, censusIdFilter, statusFilter]);
+  }, [idFilter, dateFilter, approvalDateFilter, municipalityIdFilter, censusIdFilter, statusFilter]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= meta.last_page) setPage(newPage);
@@ -143,7 +143,7 @@ const MainPanel: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col w-full h-full bg-slate-50">
+    <div className="flex flex-col w-full c gap-4h-full bg-slate-50">
       {/* --- MAIN CONTENT AREA --- */}
       <main className="flex-1 p-6 overflow-auto">
         {/* Breadcrumbs */}
@@ -154,18 +154,10 @@ const MainPanel: React.FC = () => {
         </div>
 
         {/* Toolbar / Actions */}
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-md bg-white p-2 shadow-sm border">
-          <div className="flex items-center">
-            <Button variant="outline" className="gap-2">
-              Registros <ChevronDown className="h-4 w-4" />
-            </Button>
-          </div>
+        <div className="mb-4 flex flex-wrap items-center justify-center gap-4 rounded-md bg-white p-2 shadow-sm border">
           <div className="flex gap-2 items-center">
             <Button className="bg-sky-700 text-white hover:bg-sky-800 gap-2">
               <Map className="h-4 w-4" /> Mapa interactivo
-            </Button>
-            <Button className="bg-sky-700 text-white hover:bg-sky-800 gap-2">
-              <FileDown className="h-4 w-4" /> Generar reporte
             </Button>
           </div>
         </div>
@@ -190,11 +182,11 @@ const MainPanel: React.FC = () => {
 
                   <th className="p-3">
                     <input
-                      type="text"
-                      placeholder="Filtrar por censista (mail)"
+                      type="date"
+                      placeholder="Filtrar por fecha de aprobación"
                       className="bg-slate-200 p-1 rounded w-full text-sm"
-                      value={mailFilter}
-                      onChange={e => setMailFilter(e.target.value)}
+                      value={approvalDateFilter}
+                      onChange={e => setApprovalDateFilter(e.target.value)}
                     />
                   </th>
 
@@ -324,4 +316,4 @@ const MainPanel: React.FC = () => {
     </div>
   );
 };
-export default MainPanel;
+export default MyAccount;
