@@ -6,6 +6,7 @@ import MainPanel from "../tabs/MainPanel";
 import { Panel } from "../ui/own/Panel";
 import { RecordDetails } from "../tabs/RecordDetails";
 import MuniManagement from "../tabs/MuniManagement";
+import FormAndCensus from "../tabs/FormAndCensus";
 
 const Routes: React.FC = () => {
   const { token } = useAuth();
@@ -42,6 +43,10 @@ const Routes: React.FC = () => {
         {
           path: "/territorio",
           element: <Panel><MuniManagement/></Panel>,
+        },
+         {
+          path: "/formulario",
+          element: <Panel><FormAndCensus/></Panel>,
         }
       ],
     },
