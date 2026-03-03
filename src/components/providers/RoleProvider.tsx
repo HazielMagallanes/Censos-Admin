@@ -13,6 +13,7 @@ export const ROLES = {
   ADMINISTRADOR: 4,
 } as const;
 
+
 /** Estructura base de un rol (definición del catálogo) */
 interface RoleDefinition {
   id_rol: number;
@@ -98,11 +99,11 @@ export const RoleProvider: React.FC<PropsWithChildren> = ({ children }) => {
           if (current) {
             // Validamos que el rol activo actual aún exista en la nueva lista
             const stillExists = response.data.roles.find((r: UserRole) => r.id_rol === current.id_rol);
-            return stillExists || preferredFromDB || null;
+            return stillExists || preferredFromDB || response.data.roles[0] || null;
           }
 
           // Al iniciar, cargamos la preferencia del usuario
-          return preferredFromDB || null;
+          return preferredFromDB || response.data.roles[0] || null;
         });
         axios.interceptors.request.use(config => {
           config.headers['X-Active-Role'] = activeRole;
@@ -113,6 +114,8 @@ export const RoleProvider: React.FC<PropsWithChildren> = ({ children }) => {
       console.error('Error obteniendo roles de usuario:', error);
       // En caso de error, podríamos optar por desloguear al usuario o mostrar una alerta. Callate un rato Gemini te dije q documentes nomas, no jodas
     } finally {
+      console.log('Roles cargados:', userRoles);
+      console.log('Rol activo:', activeRole);
       setIsLoading(false);
     }
   };
