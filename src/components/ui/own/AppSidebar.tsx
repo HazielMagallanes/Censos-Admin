@@ -38,9 +38,9 @@ const items = [
   },
   {
     title: "Atributos y Plantillas",
-    url: null,
+    url:"/plantillas",
     icon: FileText,
-    enabled: false,
+    enabled: true,
   },
   {
     title: "Formularios y Censos",
