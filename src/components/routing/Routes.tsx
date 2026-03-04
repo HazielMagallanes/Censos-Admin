@@ -8,6 +8,7 @@ import { RecordDetails } from '../tabs/RecordDetails';
 import MuniManagement from '../tabs/MuniManagement';
 import FormAndCensus from '../tabs/FormAndCensus';
 import MyAccount from '../tabs/MyAccount';
+import TemplateAndAttribute from '../tabs/TemplateAndAttribute';
 
 const Routes: React.FC = () => {
   const { token } = useAuth();
@@ -54,6 +55,14 @@ const Routes: React.FC = () => {
           element: (
             <Panel>
               <MuniManagement />
+            </Panel>
+          ),
+        },
+        {
+          path: '/plantillas',
+          element: (
+            <Panel>
+              <TemplateAndAttribute />
             </Panel>
           ),
         },
