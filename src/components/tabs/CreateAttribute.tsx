@@ -22,7 +22,6 @@ const CreateAttribute: React.FC<CreateAttributeProps> = ({ onBack }) => {
   // Form States
   const [attributeName, setAttributeName] = useState("");
   const [attributeType, setAttributeType] = useState<number | null>(null);
-  const [attributeUnit, setAttributeUnit] = useState("");
   const [isDuplicable, setIsDuplicable] = useState<boolean | null>(null);
   const [isMandatory, setIsMandatory] = useState<boolean | null>(null);
   const [description, setDescription] = useState("");
@@ -84,7 +83,7 @@ const CreateAttribute: React.FC<CreateAttributeProps> = ({ onBack }) => {
   };
 
   const handleSave = async () => {
-    if(!attributeName.trim() || !attributeType || !attributeUnit.trim() || isDuplicable === null || !description.trim()) {
+    if(!attributeName.trim() || !attributeType || isDuplicable === null || !description.trim()) {
       setError("Por favor, complete todos los campos obligatorios.");
       return;
     }
@@ -92,20 +91,21 @@ const CreateAttribute: React.FC<CreateAttributeProps> = ({ onBack }) => {
       const  response = await axios.post("/attributes", {
         nombre: attributeName,
         descripcion: description,
-        unit: attributeUnit,
         duplicable: isDuplicable,
         obligatorio: isMandatory,                                                                                                                                  
         id_tipo: attributeType, 
-        options: dataList,
+        id_categoria: 1, // HARDCODED CATEGORY ID NEEDS TO BE OPTIONAL ON BACKEND
+        recomendaciones: dataList.length > 0 ? `[${dataList.map(item => item.name).join(",")}]` : "",
       });
       if (response.status === 200) {
         onBack(); // Go back to the list view after successful save
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : "Error al guardar el atributo.");
+      console.error("Error saving attribute:", error);
     }
     // Add your save logic here, then return to list:
-    // onBack(); 
+     onBack(); 
   };
 
   return (
@@ -156,17 +156,6 @@ const CreateAttribute: React.FC<CreateAttributeProps> = ({ onBack }) => {
                 ))}
 
               </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-sky-800 mb-1">Unidad del atributo *</label>
-              <input
-                type="text"
-                placeholder="Entrada de texto"
-                className="w-full border border-slate-200 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 text-slate-600"
-                value={attributeUnit}
-                onChange={(e) => setAttributeUnit(e.target.value)}
-              />
             </div>
             {error && (
               <p className="text-red-600 text-sm">{error}</p>

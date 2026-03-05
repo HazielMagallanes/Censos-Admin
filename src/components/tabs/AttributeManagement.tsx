@@ -2,10 +2,10 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Loader2, ChevronLeft, ChevronRight, SquarePlus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/shadcn/button";
-import { useNavigate } from "react-router";
 import CreateAttribute from "./CreateAttribute";
 import { AttributeType } from "@/types/tipos";
 import ConfirmationModal from "../ui/own/ConfirmationModal";
+import EditAttributeDialog from "../ui/own/EditAttributeDialog";
 
 // --- INTERFACES ---
 
@@ -13,8 +13,11 @@ interface Atributo {
     id_atributo: number;
     nombre: string;
     id_tipo: number;
+    id_categoria: number;
     duplicable: boolean;
-    plantilla: boolean;
+    obligatorio: boolean;
+    descripcion: string;
+    recomendaciones: string;
     created_at: string;
     updated_at: string;
 }
@@ -36,34 +39,47 @@ const AttributeManagement: React.FC<AttributeManagementProps> = ({ onToggleScene
     const [error, setError] = useState<string | null>(null);
     const [isCreating, setIsCreating] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const navigate = useNavigate();
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [attributeToEdit, setAttributeToEdit] = useState<Atributo | null>(null);
     // Paginación
-    const [meta, setMeta] = useState<MetaData>({ total: 1, page: 1, last_page: 1 });
+    const [meta, setMeta] = useState<MetaData>({ total: 0, page: 1, last_page: 1 });
     const [page, setPage] = useState<number>(1);
     const LIMIT = 10;
     
     // Filtering States
-    const [idFilter, setIdFilter] = useState<string>('');
+    const [nameFilter, setNameFilter] = useState<string>('');
     const [isEliminating, setIsEliminating] = useState<boolean>(false);
-    const [dateFilter, setDateFilter] = useState<string>('');
-    const [mailFilter, setMailFilter] = useState<string>('');
-    const [municipalityIdFilter, setMunicipalityIdFilter] = useState<string>('');
-    const [censusIdFilter, setCensusIdFilter] = useState<string>('');
-    const [statusFilter, setStatusFilter] = useState<string>('');
+    const [typeFilter, setTypeFilter] = useState<AttributeType>();
+    const [statusFilter, setStatusFilter] = useState<boolean | null>(null);
     const [selectedAtributos, setSelectedAtributos] = useState<Set<number>>(new Set());
-
-
 
     // Fetch con Debounce
     useEffect(() => {
         const fetchAtributos = async () => {
             setLoading(true);
             try {
-                const response = await axios.get(`/attributes`); 
+                // Construir query params dinámicamente
+                const params = new URLSearchParams({
+                    page: page.toString(),
+                    limit: LIMIT.toString(),
+                });
+                if (nameFilter) params.append('nombre', nameFilter);
+                if (typeFilter) {
+                    // Convert type name to corresponding numeric ID
+                    const typeId = Object.entries(AttributeType).find(([value]) => value === typeFilter)?.[0];
+                    if (typeId) params.append('id_tipo', typeId);
+                }
+                if (statusFilter !== null) params.append('duplicable', statusFilter.toString());
+
+                const response = await axios.get(`/attributes?${params.toString()}`); 
                 if (response.data) {
-                    console.log("Datos recibidos:", response.data);
-                    const filteredAtributos = response.data.attributes.slice(0, LIMIT);
-                    setAtributos(filteredAtributos);
+                    console.log("Fetched attributes:", response.data);
+                    setAtributos(response.data.attributes);
+                    if (!response.data.meta){
+                        setMeta({ total: response.data.attributes.length, page: 1, last_page: 1 });
+                        return;
+                    }
+                    setMeta(response.data.meta);
                 }
             } catch (err) {
                 console.error(err);
@@ -78,12 +94,11 @@ const AttributeManagement: React.FC<AttributeManagementProps> = ({ onToggleScene
         }, 500);
 
         return () => clearTimeout(timeoutId);
-    }, [page, idFilter, dateFilter, mailFilter, municipalityIdFilter, censusIdFilter, statusFilter]);
+    }, [page, nameFilter, typeFilter, statusFilter]);
 
     useEffect(() => {
         setPage(1);
-    }, [idFilter, dateFilter, mailFilter, municipalityIdFilter, censusIdFilter, statusFilter]);
-
+    }, [nameFilter,  typeFilter, statusFilter]);
     const handlePageChange = (newPage: number) => {
         if (newPage >= 1 && newPage <= meta.last_page) setPage(newPage);
     };
@@ -101,23 +116,62 @@ const AttributeManagement: React.FC<AttributeManagementProps> = ({ onToggleScene
         return pages;
     };
 
-    const formatDate = (isoString: string) => {
-        if (!isoString) return "-";
-        const date = new Date(isoString);
-        return new Intl.DateTimeFormat('es-AR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        }).format(date);
-    };
-
-    const handleDelete = () => {
-        // Aquí iría la lógica para eliminar los atributos seleccionados
-        console.log("Eliminar atributos con IDs:", Array.from(selectedAtributos));
-        setIsModalOpen(false);
-        setIsEliminating(false);
-        setSelectedAtributos(new Set());
+    const handleDelete = async () => {
+        try {
+            console.log("Attempting to delete attributes with IDs:", Array.from(selectedAtributos));
+            const response = await axios.delete('/attributes', { data: { ids: Array.from(selectedAtributos) } });
+            if (response.status === 200) {
+                setIsModalOpen(false);
+                setIsEliminating(false);
+                setSelectedAtributos(new Set());
+                setPage(1);
+            }
+            if (response.status === 403) {
+                setError("Uno o mas de los atributos seleccionados están asociados a plantillas, por lo que no pueden ser eliminados.");
+            }
+        } catch (error) {
+            setIsModalOpen(false);
+            setError("Error al eliminar los atributos. Por favor, inténtalo de nuevo.");
+            console.error(error);
+        }
     }
+    const handleEditAttribute = async (atributo: Atributo) => {
+        try {
+            // Check if any data has actually changed
+            const hasChanges = 
+                atributo.nombre !== attributeToEdit?.nombre ||
+                atributo.descripcion !== attributeToEdit?.descripcion ||
+                atributo.recomendaciones !== (attributeToEdit?.recomendaciones || "") ||
+                atributo.obligatorio !== attributeToEdit?.obligatorio ||
+                atributo.id_categoria !== attributeToEdit?.id_categoria ||
+                atributo.id_tipo !== attributeToEdit?.id_tipo ||
+                atributo.duplicable !== attributeToEdit?.duplicable;
+
+            if (!hasChanges) {
+                setIsEditDialogOpen(false);
+                return;
+            }
+
+            const response = await axios.put(`/attributes/${atributo.id_atributo}`,{
+                nombre: atributo.nombre,
+                descripcion: atributo.descripcion,
+                recomendaciones: atributo.recomendaciones || "",
+                obligatorio: atributo.obligatorio,
+                id_categoria: atributo.id_categoria,
+                id_tipo: atributo.id_tipo,
+                duplicable: atributo.duplicable,
+
+            } );
+            if (response.status === 200) {
+                setPage(1);
+            }
+        } catch (error) {
+            console.error("Error al editar el atributo:", error);
+        }
+        setAttributeToEdit(atributo);
+        setIsEditDialogOpen(false);
+    }
+    
     if (isCreating) {
         return <CreateAttribute onBack={() => setIsCreating(false)} />;
     }
@@ -203,27 +257,32 @@ const AttributeManagement: React.FC<AttributeManagementProps> = ({ onToggleScene
                                     <th className="p-3 text-center">#</th>
                                     <th className="p-3">
                                         <input
-                                            type="number"
+                                            type="text"
                                             placeholder="Filtrar por Atributo"
                                             className="bg-slate-200 p-1 rounded w-full text-sm"
-                                            value={idFilter}
-                                            onChange={(e) => setIdFilter(e.target.value)}
-                                        />
-                                    </th>
-                                    <th className="p-3">
-                                        <input
-                                            type="text"
-                                            placeholder="Filtrar por tipo"
-                                            className="bg-slate-200 p-1 rounded w-full text-sm"
-                                            value={mailFilter}
-                                            onChange={(e) => setMailFilter(e.target.value)}
+                                            value={nameFilter}
+                                            onChange={(e) => setNameFilter(e.target.value)}
                                         />
                                     </th>
                                     <th className="p-3">
                                         <select
                                             className="bg-slate-200 p-1 rounded w-full text-sm"
-                                            value={statusFilter}
-                                            onChange={(e) => setStatusFilter(e.target.value)}
+                                            value={typeFilter || ''}
+                                            onChange={(e) => setTypeFilter(e.target.value ? e.target.value as AttributeType : undefined)}
+                                        >
+                                            <option value="">Filtrar por tipo</option>
+                                            {Object.values(AttributeType).map((type) => (
+                                                <option key={type} value={type}>
+                                                    {type}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </th>
+                                    <th className="p-3">
+                                        <select
+                                            className="bg-slate-200 p-1 rounded w-full text-sm"
+                                            value={statusFilter === null ? "" : statusFilter.toString()}
+                                            onChange={(e) => setStatusFilter(e.target.value === "" ? null : e.target.value === "true")}
                                         >
                                             <option value="">Filtrar por propiedad</option>
                                             <option value="false">duplicable</option>
@@ -258,7 +317,12 @@ const AttributeManagement: React.FC<AttributeManagementProps> = ({ onToggleScene
                                         <tr
                                             key={atributo.id_atributo}
                                             className={`transition-colors ${!isEliminating ? "hover:bg-slate-50 cursor-pointer" : ""}`}
-                                            onClick={() => !isEliminating && navigate(`/atributo/${atributo.id_atributo}`)}
+                                            onClick={() => { 
+                                                if (!isEliminating) {
+                                                    setAttributeToEdit(atributo);
+                                                    setIsEditDialogOpen(true);
+                                                }
+                                            }}
                                         >
                                             <td className="p-3 text-center w-12">
                                                 {isEliminating && (
@@ -327,6 +391,8 @@ const AttributeManagement: React.FC<AttributeManagementProps> = ({ onToggleScene
                     cancelText="Cancelar"
                     confirmText="Eliminar"
                     />)}
+                    <EditAttributeDialog initialData={attributeToEdit} isOpen={isEditDialogOpen} onClose={() => setIsEditDialogOpen(false)} onSave={handleEditAttribute} />
+
                     {!error && atributos.length > 0 && (
                         <div className="flex items-center justify-between border-t p-4 bg-slate-50">
                             <div className="text-xs text-slate-500">
