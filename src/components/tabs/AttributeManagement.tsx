@@ -20,6 +20,7 @@ interface Atributo {
     recomendaciones: string;
     created_at: string;
     updated_at: string;
+    bloqueado?: boolean;
 }
 
 interface MetaData {
@@ -118,8 +119,20 @@ const AttributeManagement: React.FC<AttributeManagementProps> = ({ onToggleScene
 
     const handleDelete = async () => {
         try {
-            console.log("Attempting to delete attributes with IDs:", Array.from(selectedAtributos));
-            const response = await axios.delete('/attributes', { data: { ids: Array.from(selectedAtributos) } });
+            // Filter out blocked attributes from deletion
+            const selectableAtributos = Array.from(selectedAtributos).filter(id => {
+                const atributo = atributos.find(a => a.id_atributo === id);
+                return !atributo?.bloqueado;
+            });
+            
+            if (selectableAtributos.length === 0) {
+                setError("No se pueden eliminar atributos bloqueados.");
+                setIsModalOpen(false);
+                return;
+            }
+            
+            console.log("Attempting to delete attributes with IDs:", selectableAtributos);
+            const response = await axios.delete('/attributes', { data: { ids: selectableAtributos } });
             if (response.status === 200) {
                 setIsModalOpen(false);
                 setIsEliminating(false);
@@ -244,12 +257,12 @@ const AttributeManagement: React.FC<AttributeManagementProps> = ({ onToggleScene
                                                 type="checkbox" 
                                                 onChange={(e) => {
                                                     if (e.target.checked) {
-                                                        setSelectedAtributos(new Set(atributos.map(a => a.id_atributo)));
+                                                        setSelectedAtributos(new Set(atributos.filter(a => !a.bloqueado).map(a => a.id_atributo)));
                                                     } else {
                                                         setSelectedAtributos(new Set());
                                                     }
                                                 }}
-                                                checked={selectedAtributos.size === atributos.length && atributos.length > 0}
+                                                checked={selectedAtributos.size === atributos.filter(a => !a.bloqueado).length && atributos.filter(a => !a.bloqueado).length > 0}
                                                 className="cursor-pointer"
                                             />
                                         )}
@@ -316,9 +329,9 @@ const AttributeManagement: React.FC<AttributeManagementProps> = ({ onToggleScene
                                     atributos.map((atributo, index) => (
                                         <tr
                                             key={atributo.id_atributo}
-                                            className={`transition-colors ${!isEliminating ? "hover:bg-slate-50 cursor-pointer" : ""}`}
+                                            className={`transition-colors ${!isEliminating && !atributo.bloqueado ? "hover:bg-slate-50 cursor-pointer" : ""} ${atributo.bloqueado ? "bg-slate-100 opacity-60" : ""}`}
                                             onClick={() => { 
-                                                if (!isEliminating) {
+                                                if (!isEliminating && !atributo.bloqueado) {
                                                     setAttributeToEdit(atributo);
                                                     setIsEditDialogOpen(true);
                                                 }
@@ -339,7 +352,8 @@ const AttributeManagement: React.FC<AttributeManagementProps> = ({ onToggleScene
                                                             setSelectedAtributos(newSelected);
                                                         }}
                                                         onClick={(e) => e.stopPropagation()}
-                                                        className="cursor-pointer"
+                                                        disabled={atributo.bloqueado}
+                                                        className="cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                                     />
                                                 )}
                                             </td>
@@ -354,6 +368,9 @@ const AttributeManagement: React.FC<AttributeManagementProps> = ({ onToggleScene
                                             </td>
                                             <td className="p-4 text-slate-600">
                                                 {atributo.duplicable ? "Duplicable" : "No duplicable"}
+                                                {atributo.bloqueado && (
+                                                    <span className="ml-2 inline-block bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-medium">Bloqueado</span>
+                                                )}
                                             </td>
                                         </tr>
                                     ))
