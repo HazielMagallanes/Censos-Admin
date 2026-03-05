@@ -4,7 +4,6 @@ export const AttributeType = {
   3:"Long Text",
   4:"Select",
   5:"Confirmation",
-  6:"Image",
   7:"Location",
 } as const;
 
