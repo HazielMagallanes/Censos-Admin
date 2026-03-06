@@ -172,7 +172,7 @@ const CreateAttribute: React.FC<CreateAttributeProps> = ({ onBack }) => {
                 className="flex-1 bg-[#2a86c4] hover:bg-[#20699c] text-white px-6"
                 onClick={handleSave}
               >
-                Guardar plantilla
+                Guardar atributo
               </Button>
             </div>
 
