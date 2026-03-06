@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Map } from 'lucide-react';
-import { Button } from '@/components/ui/shadcn/button';
 import { useNavigate } from 'react-router';
-import DataTable, { type ColumnDef } from '@/components/ui/own/DataTable';
+import DataTable, { type ColumnDef, type ButtonDef } from '@/components/ui/own/DataTable';
 // --- INTERFACES ---
 interface Creator {
   nombre: string;
@@ -175,6 +174,15 @@ const MyAccount: React.FC = () => {
     setMunicipalityIdFilter(newFilters['censo.municipio.nombre'] || '');
   };
 
+  const tableButtons: ButtonDef[] = [
+    {
+      id: 'mapa',
+      label: 'Mapa interactivo',
+      icon: <Map className="h-4 w-4" />,
+      onClick: () => { }
+    }
+  ];
+
   return (
     <div className="flex flex-col w-full c gap-4h-full bg-slate-50">
       {/* --- MAIN CONTENT AREA --- */}
@@ -186,21 +194,13 @@ const MyAccount: React.FC = () => {
           <span className="font-medium underline">Listado de registros censales</span>
         </div>
 
-        {/* Toolbar / Actions */}
-        <div className="mb-4 flex flex-wrap items-center justify-center gap-4 rounded-md bg-white p-2 shadow-sm border">
-          <div className="flex gap-2 items-center">
-            <Button className="bg-sky-700 text-white hover:bg-sky-800 gap-2">
-              <Map className="h-4 w-4" /> Mapa interactivo
-            </Button>
-          </div>
-        </div>
-
         {/* Table Structure via DataTable */}
         <div className="bg-white rounded-md shadow-sm">
           <DataTable
             columns={columns}
             data={registros}
             rowKey="id_registro"
+            buttons={tableButtons}
             loading={loading}
             error={error}
             currentPage={page}

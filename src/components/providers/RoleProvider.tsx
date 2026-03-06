@@ -56,11 +56,11 @@ interface RoleContextType {
 const RoleContext = createContext<RoleContextType>({
   userRoles: [],
   activeRole: null,
-  setActiveRole: () => {},
+  setActiveRole: () => { },
   isLoading: true,
   hasRole: () => false,
   hasAnyRole: () => false,
-  refreshRoles: async () => {},
+  refreshRoles: async () => { },
 });
 
 /**
@@ -106,7 +106,9 @@ export const RoleProvider: React.FC<PropsWithChildren> = ({ children }) => {
           return preferredFromDB || response.data.roles[0] || null;
         });
         axios.interceptors.request.use(config => {
-          config.headers['X-Active-Role'] = activeRole;
+          if (activeRole) {
+            config.headers['X-Active-Role'] = activeRole.id_rol.toString();
+          }
           return config;
         });
       }
@@ -142,7 +144,9 @@ export const RoleProvider: React.FC<PropsWithChildren> = ({ children }) => {
   const setActiveRole = (role: UserRole) => {
     setActiveRoleState(role);
     axios.interceptors.request.use(config => {
-      config.headers['X-Active-Role'] = activeRole;
+      if (role) {
+        config.headers['X-Active-Role'] = role.id_rol.toString();
+      }
       return config;
     });
   };

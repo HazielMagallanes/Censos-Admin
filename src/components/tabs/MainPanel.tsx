@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Map, FileDown, ChevronDown } from 'lucide-react';
-import { Button } from '@/components/ui/shadcn/button';
+import { Map, FileDown } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import DataTable, { type ColumnDef } from '@/components/ui/own/DataTable';
+import DataTable, { type ColumnDef, type ButtonDef } from '@/components/ui/own/DataTable';
 
 // --- INTERFACES ---
 interface Creator {
@@ -179,6 +178,21 @@ const MainPanel: React.FC = () => {
     }).format(date);
   };
 
+  const tableButtons: ButtonDef[] = [
+    {
+      id: 'mapa',
+      label: 'Mapa interactivo',
+      icon: <Map className="h-4 w-4" />,
+      onClick: () => { }
+    },
+    {
+      id: 'reporte',
+      label: 'Generar reporte',
+      icon: <FileDown className="h-4 w-4" />,
+      onClick: () => { }
+    }
+  ];
+
   return (
     <div className="flex flex-col w-full h-full bg-slate-50">
       {/* --- MAIN CONTENT AREA --- */}
@@ -190,29 +204,14 @@ const MainPanel: React.FC = () => {
           <span className="font-medium underline">Listado de registros censales</span>
         </div>
 
-        {/* Toolbar / Actions */}
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-md bg-white p-2 shadow-sm border">
-          <div className="flex items-center">
-            <Button variant="outline" className="gap-2">
-              Registros <ChevronDown className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="flex gap-2 items-center">
-            <Button className="bg-sky-700 text-white hover:bg-sky-800 gap-2">
-              <Map className="h-4 w-4" /> Mapa interactivo
-            </Button>
-            <Button className="bg-sky-700 text-white hover:bg-sky-800 gap-2">
-              <FileDown className="h-4 w-4" /> Generar reporte
-            </Button>
-          </div>
-        </div>
-
         {/* Table Structure via DataTable */}
         <div className="bg-white rounded-md shadow-sm">
           <DataTable
             columns={columns}
             data={registros}
             rowKey="id_registro"
+            buttons={tableButtons}
+            headerText="Registros"
             loading={loading}
             error={error}
             currentPage={page}

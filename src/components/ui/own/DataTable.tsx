@@ -18,6 +18,7 @@ export interface ColumnDef<T = any> {
     filterPlaceholder?: string;
     render?: (value: any, row: T) => React.ReactNode;
     options?: { value: any; label: string }[]; // Para tipo 'select'
+    filterFn?: (row: T, filterValue: string) => boolean;
 }
 
 /**
@@ -110,10 +111,19 @@ export const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
             return data.filter(row => {
                 return columns.every(col => {
                     if (!col.filterable || !filters[col.key]) return true;
-                    if (col.type === 'select') {
-                        return String(row[col.key]) === String(filters[col.key]);
+
+                    if (col.filterFn) {
+                        return col.filterFn(row, filters[col.key]);
                     }
-                    const value = String(row[col.key]).toLowerCase();
+
+                    const rowValue = col.key.includes('.')
+                        ? col.key.split('.').reduce((acc, part) => acc && acc[part], row)
+                        : row[col.key];
+
+                    if (col.type === 'select') {
+                        return String(rowValue).toLowerCase() === String(filters[col.key]).toLowerCase();
+                    }
+                    const value = String(rowValue ?? '').toLowerCase();
                     return value.includes(filters[col.key].toLowerCase());
                 });
             });
@@ -408,7 +418,7 @@ export const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
                                                     }
                                                 }}
                                                 className={`border-b text-sm transition-colors ${isBlocked ? 'bg-slate-50 opacity-60' :
-                                                        !isSelectionMode ? 'hover:bg-slate-50 cursor-pointer' : 'cursor-default'
+                                                    !isSelectionMode ? 'hover:bg-slate-50 cursor-pointer' : 'cursor-default'
                                                     } ${isSelected ? 'bg-[#D0DBE5] border-[#608CB5] border-b-2 border-t-2' : 'border-[#D0DBE5]'
                                                     }`}
                                             >
