@@ -96,7 +96,7 @@ const AttributeManagement: React.FC<AttributeManagementProps> = ({ onToggleScene
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [page, nameFilter, typeFilter, statusFilter]);
+  }, [page, nameFilter, typeFilter, statusFilter, isCreating]);
 
   useEffect(() => {
     setPage(1);
