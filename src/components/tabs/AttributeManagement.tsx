@@ -82,6 +82,7 @@ const AttributeManagement: React.FC<AttributeManagementProps> = ({ onToggleScene
             return;
           }
           setMeta(response.data.meta);
+          console.log(meta)
         }
       } catch (err) {
         console.error(err);
@@ -178,7 +179,10 @@ const AttributeManagement: React.FC<AttributeManagementProps> = ({ onToggleScene
         duplicable: atributo.duplicable,
       });
       if (response.status === 200) {
-        setPage(1);
+        // Update local state with the edited attribute
+        setAtributos(prev =>
+          prev.map(a => (a.id_atributo === atributo.id_atributo ? { ...a, ...atributo } : a)),
+        );
       }
     } catch (error) {
       console.error('Error al editar el atributo:', error);
