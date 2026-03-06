@@ -42,10 +42,10 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
     const [selectedMunicipality, setSelectedMunicipality] = useState<number>(0);
     const [municipalities, setMunicipalities] = useState<Municipality[]>([]);
     const [attributes, setAttributes] = useState<Atributo[]>([]);
-    
+
     // Drag and Drop State
     const [draggedItem, setDraggedItem] = useState<{ type: 'category' | 'attribute'; categoryId: string; attrId?: number } | null>(null);
-    
+
     // Categorias/Agrupamientos State
     const [categorias, setCategorias] = useState<CategoriaForm[]>([
         { id: Math.random().toString(), nombre: "Nombre del agrupamiento", atributos: [] }
@@ -83,12 +83,12 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
         };
         fetchAttributes();
     }, []);
-    
+
 
     // --- HANDLERS: Form Structure ---
     const handleAddAgrupamiento = () => {
         setCategorias([
-            ...categorias, 
+            ...categorias,
             { id: Math.random().toString(), nombre: "Nuevo agrupamiento", atributos: [] }
         ]);
     };
@@ -160,7 +160,7 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
         if (!draggedItem.attrId) return;
 
         const newCategorias = [...categorias];
-        
+
         // Get the dragged attribute
         const draggedAttrIndex = newCategorias[categoryIndex].atributos.findIndex(a => a.id_atributo === draggedItem.attrId);
         if (draggedAttrIndex === -1) return;
@@ -190,13 +190,13 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
         if (!targetCategoryId) return;
 
         const attributesToAdd = attributes.filter(attr => selectedAttributes.has(attr.id_atributo));
-        
+
         setCategorias(categorias.map(cat => {
             if (cat.id === targetCategoryId) {
                 // Prevent duplicates in the same category
                 const existingIds = new Set(cat.atributos.map(a => a.id_atributo));
                 const uniqueNewAttributes = attributesToAdd.filter(a => !existingIds.has(a.id_atributo));
-                
+
                 return { ...cat, atributos: [...cat.atributos, ...uniqueNewAttributes] };
             }
             return cat;
@@ -208,19 +208,19 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
     // --- HANDLERS: Save ---
     const handleSave = async () => {
         if (!templateName.trim() || !descripcion.trim()) return setError("Por favor, completa todos los campos obligatorios.");
-        
+
         // Check if categories are empty
         if (categorias.length === 0) return setError("Debe agregar al menos un agrupamiento.");
-        
+
         // Check if all categories are empty of attributes
         const hasAttributes = categorias.some(cat => cat.atributos.length > 0);
         if (!hasAttributes) return setError("Debe agregar al menos un atributo a los agrupamientos.");
-        
+
         // If exclusive, cannot have a municipality
         if (exclusividad === true && selectedMunicipality !== 0) {
             return setError("Las plantillas especiales no pueden estar asociadas a una municipalidad.");
         }
-        
+
         // Here we format the state to match your Prisma backend structure
         const payload = {
             nombre: templateName,
@@ -230,7 +230,7 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
             categorias: categorias.map(cat => ({
                 nombre: cat.nombre,
                 descripcion: "", // Default or add field
-                atributos: cat.atributos.map(attr => attr.id_atributo)
+                ids_atributos: cat.atributos.map(attr => attr.id_atributo)
             }))
         };
         try {
@@ -238,7 +238,7 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
                 if (response.status === 200) {
                     onBack();
                 }
-                 
+
             });
         } catch (error) {
             console.error("Error al crear la plantilla:", error);
@@ -266,14 +266,14 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
 
                 {/* Main Content Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                    
+
                     {/* Left Panel: Form (Spans 3 columns) */}
                     <div className="lg:col-span-3 flex flex-col gap-6">
-                        
+
                         {/* Title Section */}
                         <div>
                             <h2 className="text-xl font-normal text-slate-800 mb-4 border-b pb-2">Creador de plantillas de censo</h2>
-                            
+
                             <label className="block text-sm font-medium text-sky-700 mb-1">Nombre de la plantilla</label>
                             <input
                                 type="text"
@@ -305,16 +305,16 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
                         {/* Fields Section */}
                         <div className="mt-4">
                             <h3 className="text-sm font-medium text-sky-700 mb-3 border-b pb-2">Campos del formulario</h3>
-                            
+
                             <div className="flex flex-col gap-4">
                                 {categorias.map((categoria) => (
-                                    <div 
-                                        key={categoria.id} 
+                                    <div
+                                        key={categoria.id}
                                         className="flex flex-col gap-2"
                                     >
-                                        
+
                                         {/* Agrupamiento Header */}
-                                        <div 
+                                        <div
                                             className={`flex items-center bg-white border rounded-md transition-all ${draggedItem?.type === 'category' && draggedItem?.categoryId === categoria.id ? 'opacity-50 border-sky-400' : 'border-slate-200'}`}
                                             draggable
                                             onDragStart={() => handleDragStart('category', categoria.id)}
@@ -327,7 +327,7 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
                                             <div className="p-3 text-slate-400 cursor-grab active:cursor-grabbing">
                                                 <GripVertical className="w-5 h-5" />
                                             </div>
-                                            <input 
+                                            <input
                                                 type="text"
                                                 className="flex-1 p-3 text-sm text-sky-600/80 font-medium focus:outline-none bg-transparent"
                                                 value={categoria.nombre}
@@ -342,8 +342,8 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
 
                                         {/* Nested Attributes */}
                                         {categoria.atributos.map((atributo) => (
-                                            <div 
-                                                key={`${categoria.id}-${atributo.id_atributo}`} 
+                                            <div
+                                                key={`${categoria.id}-${atributo.id_atributo}`}
                                                 className={`flex items-center bg-white border rounded-md ml-4 transition-all ${draggedItem?.type === 'attribute' && draggedItem?.categoryId === categoria.id && draggedItem?.attrId === atributo.id_atributo ? 'opacity-50 border-sky-400' : 'border-slate-200'}`}
                                                 draggable
                                                 onDragStart={() => handleDragStart('attribute', categoria.id, atributo.id_atributo)}
@@ -356,11 +356,11 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
                                                 <div className="p-3 text-slate-400 cursor-grab active:cursor-grabbing">
                                                     <GripVertical className="w-5 h-5" />
                                                 </div>
-                                                
+
                                                 <div className="flex-1 p-3 text-sm text-sky-600/80 bg-transparent">
                                                     {atributo.nombre}
                                                 </div>
-                                                
+
                                                 <div className="flex items-center border-l border-slate-200">
                                                     <button onClick={() => handleRemoveAtributo(categoria.id, atributo.id_atributo)} className="p-3 text-slate-400 hover:text-red-500 hover:bg-slate-50 border-r border-slate-200 transition-colors">
                                                         <Trash2 className="w-5 h-5" />
@@ -378,19 +378,19 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
 
                     {/* Right Panel: Sidebar (Spans 1 column) */}
                     <div className="lg:col-span-1 flex flex-col gap-8">
-                        
+
                         {/* Herramientas */}
                         <div>
                             <h3 className="text-lg font-normal text-slate-800 mb-4 border-b pb-2">Herramientas</h3>
                             <div className="flex flex-col gap-3">
                                 {/* NEW BUTTON ADDED HERE */}
-                                <Button 
+                                <Button
                                     onClick={handleAddAgrupamiento}
                                     className="w-full bg-[#2a86c4] hover:bg-[#20699c] text-white py-2 shadow-sm"
                                 >
                                     Agregar agrupamiento
                                 </Button>
-                                <Button 
+                                <Button
                                     onClick={openAttributeModal}
                                     className="w-full bg-[#2a86c4] hover:bg-[#20699c] text-white py-2 shadow-sm"
                                 >
@@ -402,7 +402,7 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
                         {/* Opciones y Alertas */}
                         <div>
                             <h3 className="text-lg font-normal text-slate-800 mb-4 border-b pb-2">Opciones y alertas</h3>
-                            
+
                             <div className="mb-6">
                                 <label className="block text-sm font-medium text-sky-700 mb-3">Exclusividad para proyectos especiales</label>
                                 <div className="flex items-center gap-6">
@@ -434,14 +434,14 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
                             </p>
 
                             <div className="flex items-center justify-between gap-2">
-                                <Button 
-                                    variant="destructive" 
+                                <Button
+                                    variant="destructive"
                                     className="bg-[#b91c1c] hover:bg-red-800 text-white flex-1"
                                     onClick={onBack}
                                 >
                                     Cancelar
                                 </Button>
-                                <Button 
+                                <Button
                                     className="bg-[#2a86c4] hover:bg-[#20699c] text-white flex-1"
                                     onClick={handleSave}
                                 >
@@ -482,8 +482,8 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
 
                         <div className="p-4 max-h-[60vh] overflow-y-auto flex flex-col gap-2">
                             {attributes.map(attr => (
-                                <div 
-                                    key={attr.id_atributo} 
+                                <div
+                                    key={attr.id_atributo}
                                     onClick={() => toggleAttributeSelection(attr.id_atributo)}
                                     className="flex items-center gap-3 p-3 border rounded-md cursor-pointer hover:bg-slate-50 transition-colors"
                                 >
@@ -501,8 +501,8 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
                         </div>
                         <div className="p-4 border-t bg-slate-50 flex justify-end gap-3">
                             <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                            <Button 
-                                className="bg-sky-600 hover:bg-sky-700 text-white" 
+                            <Button
+                                className="bg-sky-600 hover:bg-sky-700 text-white"
                                 onClick={confirmAttributeSelection}
                                 disabled={!targetCategoryId}
                             >

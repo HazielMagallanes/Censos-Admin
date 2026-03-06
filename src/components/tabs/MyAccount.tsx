@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Map, FileDown, ChevronDown, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Map } from 'lucide-react';
 import { Button } from '@/components/ui/shadcn/button';
 import { useNavigate } from 'react-router';
-
+import DataTable, { type ColumnDef } from '@/components/ui/own/DataTable';
 // --- INTERFACES ---
 interface Creator {
   nombre: string;
@@ -65,9 +65,7 @@ const MyAccount: React.FC = () => {
   const [idFilter, setIdFilter] = useState<string>('');
   const [dateFilter, setDateFilter] = useState<string>('');
   const [municipalityIdFilter, setMunicipalityIdFilter] = useState<string>('');
-  const [censusIdFilter, setCensusIdFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
-  const [approvalDateFilter, setApprovalDateFilter] = useState<string>('');
 
   // Fetch con Debounce
   useEffect(() => {
@@ -84,7 +82,6 @@ const MyAccount: React.FC = () => {
         if (idFilter) params.append('id', idFilter);
         if (dateFilter) params.append('date', dateFilter);
         if (municipalityIdFilter) params.append('municipalityId', municipalityIdFilter);
-        if (censusIdFilter) params.append('censusId', censusIdFilter);
         if (statusFilter) params.append('status', statusFilter);
 
         const response = await axios.get(`/census/uploads?${params.toString()}`);
@@ -106,30 +103,7 @@ const MyAccount: React.FC = () => {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [page, idFilter, dateFilter, approvalDateFilter, municipalityIdFilter, censusIdFilter, statusFilter]);
-
-  // Resetea a la página 1 cada vez que un filtro cambia
-  useEffect(() => {
-    setPage(1);
-  }, [idFilter, dateFilter, approvalDateFilter, municipalityIdFilter, censusIdFilter, statusFilter]);
-
-  const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= meta.last_page) setPage(newPage);
-  };
-
-  // Generador de números de página
-  const getPageNumbers = () => {
-    const pages = [];
-    const { last_page, page } = meta;
-
-    pages.push(1);
-    if (page > 3) pages.push('...');
-    for (let i = Math.max(2, page - 1); i <= Math.min(last_page - 1, page + 1); i++) pages.push(i);
-    if (page < last_page - 2) pages.push('...');
-    if (last_page > 1) pages.push(last_page);
-
-    return pages;
-  };
+  }, [page, idFilter, dateFilter, municipalityIdFilter, statusFilter]);
 
   // Formateador de fecha: dd / mm / aaaa
   const formatDate = (isoString: string) => {
@@ -140,6 +114,65 @@ const MyAccount: React.FC = () => {
       month: '2-digit',
       year: 'numeric',
     }).format(date);
+  };
+
+  // Columnas para DataTable
+  const columns: ColumnDef<RegistroCensal>[] = [
+    {
+      key: 'id_registro',
+      label: 'ID',
+      type: 'number',
+      filterable: true,
+      filterPlaceholder: 'Filtrar por ID'
+    },
+    {
+      key: 'creator.correo_electronico',
+      label: 'Censista',
+      type: 'string',
+      filterable: false,
+      render: (_, row) => row.creator.correo_electronico,
+    },
+    {
+      key: 'censo.municipio.nombre',
+      label: 'Municipio',
+      type: 'string',
+      filterable: true,
+      filterPlaceholder: 'Filtrar por municipio',
+      render: (_, row) => row.censo.municipio?.nombre || '-'
+    },
+    {
+      key: 'fecha',
+      label: 'Fecha',
+      type: 'date',
+      filterable: true,
+      render: (_, row) => formatDate(row.fecha)
+    },
+    {
+      key: 'confirmado',
+      label: 'Estado',
+      type: 'select',
+      filterable: true,
+      filterPlaceholder: 'Filtrar por estado',
+      options: [
+        { value: 'true', label: 'Confirmado' },
+        { value: 'false', label: 'Pendiente' }
+      ],
+      render: (_, row) => (
+        <span
+          className={`px-2 py-1 rounded text-xs font-medium border
+          ${row.confirmado ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}
+        >
+          {row.confirmado ? 'Confirmado' : 'Pendiente'}
+        </span>
+      )
+    }
+  ];
+
+  const handleFiltersChange = (newFilters: Record<string, string>) => {
+    setIdFilter(newFilters['id_registro'] || '');
+    setDateFilter(newFilters['fecha'] || '');
+    setStatusFilter(newFilters['confirmado'] || '');
+    setMunicipalityIdFilter(newFilters['censo.municipio.nombre'] || '');
   };
 
   return (
@@ -162,155 +195,23 @@ const MyAccount: React.FC = () => {
           </div>
         </div>
 
-        {/* Table Structure */}
-        <div className="rounded-md border bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-slate-100 text-slate-600">
-                <tr>
-                  <th className="p-3 text-center">#</th>
-
-                  <th className="p-3">
-                    <input
-                      type="number"
-                      placeholder="Filtrar por ID"
-                      className="bg-slate-200 p-1 rounded w-full text-sm"
-                      value={idFilter}
-                      onChange={e => setIdFilter(e.target.value)}
-                    />
-                  </th>
-
-                  <th className="p-3">
-                    <input
-                      type="date"
-                      placeholder="Filtrar por fecha de aprobación"
-                      className="bg-slate-200 p-1 rounded w-full text-sm"
-                      value={approvalDateFilter}
-                      onChange={e => setApprovalDateFilter(e.target.value)}
-                    />
-                  </th>
-
-                  <th className="p-3">
-                    <input
-                      type="number"
-                      placeholder="Filtrar por municipio"
-                      className="bg-slate-200 p-1 rounded w-full text-sm"
-                      value={municipalityIdFilter}
-                      onChange={e => setMunicipalityIdFilter(e.target.value)}
-                    />
-                  </th>
-
-                  <th className="p-3">
-                    <input
-                      type="date"
-                      className="bg-slate-200 p-1 rounded w-full text-sm"
-                      value={dateFilter}
-                      onChange={e => setDateFilter(e.target.value)}
-                    />
-                  </th>
-
-                  <th className="p-3">
-                    <select className="bg-slate-200 p-1 rounded w-full text-sm" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-                      <option value="">Filtrar por estado</option>
-                      <option value="true">Confirmado</option>
-                      <option value="false">Pendiente</option>
-                    </select>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y relative">
-                {loading ? (
-                  <tr>
-                    <td colSpan={6} className="h-64">
-                      <div className="absolute inset-0 flex justify-center items-center text-slate-500 gap-2 bg-white/50 backdrop-blur-sm z-10">
-                        <Loader2 className="animate-spin" /> Cargando datos...
-                      </div>
-                    </td>
-                  </tr>
-                ) : error ? (
-                  <tr>
-                    <td colSpan={6} className="p-8 text-center text-red-500 h-64">
-                      {error}
-                    </td>
-                  </tr>
-                ) : registros.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="p-8 text-center text-slate-400 h-64">
-                      No se encontraron registros para estos filtros.
-                    </td>
-                  </tr>
-                ) : (
-                  registros.map((row, index) => (
-                    <tr
-                      key={row.id_registro}
-                      className="hover:bg-slate-50 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/registro/${row.id_registro}`)}
-                    >
-                      <td className="p-4 text-center text-slate-500 font-mono">{(page - 1) * LIMIT + index + 1}</td>
-
-                      <td className="p-4 font-medium text-slate-700">{row.id_registro}</td>
-
-                      <td className="p-4 text-slate-600">{row.creator.correo_electronico}</td>
-
-                      <td className="p-4 text-slate-600">{row.censo.municipio?.nombre || '-'}</td>
-
-                      <td className="p-4 text-slate-600">{formatDate(row.fecha)}</td>
-
-                      <td className="p-4">
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium border
-                                                    ${
-                                                      row.confirmado
-                                                        ? 'bg-green-50 text-green-700 border-green-200'
-                                                        : 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                                                    }`}
-                        >
-                          {row.confirmado ? 'Confirmado' : 'Pendiente'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* --- PAGINATION FOOTER --- */}
-          {!error && registros.length > 0 && (
-            <div className="flex items-center justify-between border-t p-4 bg-slate-50">
-              <div className="text-xs text-slate-500">
-                Mostrando página {meta.page} de {meta.last_page} (Total: {meta.total} registros)
-              </div>
-
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" onClick={() => handlePageChange(page - 1)} disabled={page === 1}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-
-                {getPageNumbers().map((p, idx) =>
-                  p === '...' ? (
-                    <span key={`ellipsis-${idx}`} className="px-2 text-slate-400">
-                      ...
-                    </span>
-                  ) : (
-                    <Button
-                      key={`page-${p}`}
-                      variant={p === page ? 'secondary' : 'ghost'}
-                      size="sm"
-                      className={p === page ? 'bg-slate-200 font-bold' : ''}
-                      onClick={() => handlePageChange(p as number)}
-                    >
-                      {p}
-                    </Button>
-                  ),
-                )}
-
-                <Button variant="ghost" size="sm" onClick={() => handlePageChange(page + 1)} disabled={page === meta.last_page}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
+        {/* Table Structure via DataTable */}
+        <div className="bg-white rounded-md shadow-sm">
+          <DataTable
+            columns={columns}
+            data={registros}
+            rowKey="id_registro"
+            loading={loading}
+            error={error}
+            currentPage={page}
+            totalPages={meta.last_page}
+            onPageChange={(newPage) => {
+              if (newPage >= 1 && newPage <= meta.last_page) setPage(newPage);
+            }}
+            onFiltersChange={handleFiltersChange}
+            onRowClick={(row) => navigate(`/registro/${row.id_registro}`)}
+            emptyMessage="No se encontraron registros para estos filtros."
+          />
         </div>
       </main>
     </div>

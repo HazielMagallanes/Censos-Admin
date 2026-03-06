@@ -9,6 +9,8 @@ import MuniManagement from '../tabs/MuniManagement';
 import FormAndCensus from '../tabs/FormAndCensus';
 import MyAccount from '../tabs/MyAccount';
 import TemplateAndAttribute from '../tabs/TemplateAndAttribute';
+import PlantillasList from '../tabs/PlantillasList';
+import CensoCreateFromPlantilla from '../tabs/CensoCreateFromPlantilla';
 
 const Routes: React.FC = () => {
   const { token } = useAuth();
@@ -71,6 +73,22 @@ const Routes: React.FC = () => {
           element: (
             <Panel>
               <FormAndCensus />
+            </Panel>
+          ),
+        },
+        {
+          path: '/censo-crear',
+          element: (
+            <Panel>
+              <PlantillasList />
+            </Panel>
+          ),
+        },
+        {
+          path: '/censo-crear/:idPlantilla',
+          element: (
+            <Panel>
+              <CensoCreateFromPlantilla />
             </Panel>
           ),
         },
