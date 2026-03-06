@@ -4,18 +4,20 @@ import { Loader2, ChevronLeft, ChevronRight, SquarePlus, Trash2} from "lucide-re
 import { Button } from "@/components/ui/shadcn/button";
 import { useNavigate } from "react-router";
 import CreateTemplate from "./CreateTemplate";
+import ComboBox from "../ui/own/ComboBox";
 
 // --- INTERFACES ---
 
 
-interface Atributo {
-    id_atributo: number;
-    nombre: string;
-    id_tipo: number;
-    duplicable: boolean;
-    plantilla: boolean;
-    created_at: string;
-    updated_at: string;
+interface Plantilla {
+  id_plantilla: number;
+  id_municipio: number;
+  nombre: string;
+  created_at: string;
+  updated_at: string;
+  es_copia_de: number | null;
+  modifiedBy: string | null;
+  descripcion: string | null;
 }
 
 interface MetaData {
@@ -31,7 +33,8 @@ interface TemplateManagementProps {
 
 const TemplateManagement: React.FC<TemplateManagementProps> = ({ onToggleScene = () => {}, isActive = false }) => {
 
-    const [atributos, setAtributos] = useState<Atributo[]>([]);
+    const [plantillas, setPlantillas] = useState<Plantilla[]>([]);
+    const [municipalidades, setMunicipalidades] = useState<Record<number, string>>({});
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [isCreating, setIsCreating] = useState(false);
@@ -42,12 +45,10 @@ const TemplateManagement: React.FC<TemplateManagementProps> = ({ onToggleScene =
     const LIMIT = 10;
     
     // Filtering States
-    const [idFilter, setIdFilter] = useState<string>('');
+    const [nameFilter, setNameFilter] = useState<string>('');
     const [isEliminating, setIsEliminating] = useState<boolean>(false);
     const [dateFilter, setDateFilter] = useState<string>('');
-    const [mailFilter, setMailFilter] = useState<string>('');
-    const [municipalityIdFilter, setMunicipalityIdFilter] = useState<string>('');
-    const [censusIdFilter, setCensusIdFilter] = useState<string>('');
+    const [municipalityFilter, setMunicipalityFilter] = useState<{ id_municipio: number; } | null>(null);
     const [statusFilter, setStatusFilter] = useState<string>('');
     const [selectedAtributos, setSelectedAtributos] = useState<Set<number>>(new Set());
 
@@ -56,16 +57,35 @@ const TemplateManagement: React.FC<TemplateManagementProps> = ({ onToggleScene =
         const fetchAtributos = async () => {
             setLoading(true);
             try {
+                // Construir query params dinámicamente
+                const params = new URLSearchParams({
+                  page: page.toString(),
+                  limit: LIMIT.toString(),
+                });
 
-                const response = await axios.get(`/attributes`); 
+                if (nameFilter) params.append('nombre', nameFilter);
+                if (dateFilter) params.append('fecha', dateFilter);
+                if (municipalityFilter) params.append('id_municipio', municipalityFilter.id_municipio.toString());
+                if (statusFilter) params.append('es_copia_de', statusFilter);
+                const response = await axios.get(`/templates?${params.toString()}`); 
+
+                if (Object.keys(municipalidades).length === 0) {
+                  const munResponse = await axios.get('/municipalities');
+                  const munMap: Record<number, string> = {};
+                  munResponse.data.municipalities.forEach((mun: { id_municipio: number; nombre: string }) => {
+                    munMap[mun.id_municipio] = mun.nombre;
+                  });
+                  setMunicipalidades(munMap);
+                } 
+                console.log("Respuesta de la API:", response);
                 if (response.data) {
                     console.log("Datos recibidos:", response.data);
-                    const filteredAtributos = response.data.attributes.slice(0, LIMIT);
-                    setAtributos(filteredAtributos);
+                    setPlantillas(response.data.templates);
+                    // setMeta(response.data.meta);
                 }
             } catch (err) {
                 console.error(err);
-                setError("Error al cargar los atributos.");
+                setError("Error al cargar las plantillas.");
             } finally {
                 setLoading(false);
             }
@@ -77,12 +97,12 @@ const TemplateManagement: React.FC<TemplateManagementProps> = ({ onToggleScene =
         }, 500);
 
         return () => clearTimeout(timeoutId);
-    }, [page, idFilter, dateFilter, mailFilter, municipalityIdFilter, censusIdFilter, statusFilter]);
+    }, [page, nameFilter, dateFilter,  municipalityFilter,  statusFilter]);
 
     // Resetea a la página 1 cada vez que un filtro cambia
     useEffect(() => {
         setPage(1);
-    }, [idFilter, dateFilter, mailFilter, municipalityIdFilter, censusIdFilter, statusFilter]);
+    }, [nameFilter, dateFilter, municipalityFilter, statusFilter]);
 
     const handlePageChange = (newPage: number) => {
         if (newPage >= 1 && newPage <= meta.last_page) setPage(newPage);
@@ -183,22 +203,23 @@ const TemplateManagement: React.FC<TemplateManagementProps> = ({ onToggleScene =
                 
                                   <th className="p-3">
                                     <input
-                                      type="number"
+                                      type="text"
                                       placeholder="Filtrar por Nombre"
                                       className="bg-slate-200 p-1 rounded w-full text-sm"
-                                      value={idFilter}
-                                      onChange={e => setIdFilter(e.target.value)}
+                                      value={nameFilter}
+                                      onChange={e => setNameFilter(e.target.value)}
                                     />
                                   </th>
-                
+
                                   <th className="p-3">
-                                    <input
-                                      type="text"
-                                      placeholder="Filtrar por tipo"
-                                      className="bg-slate-200 p-1 rounded w-full text-sm"
-                                      value={mailFilter}
-                                      onChange={e => setMailFilter(e.target.value)}
+                                    <ComboBox
+                                      options={Object.entries(municipalidades).map(([id, nombre]) => ({ id_municipio: parseInt(id), nombre }))}
+                                      value={municipalityFilter ? municipalityFilter.id_municipio : 0}
+                                      onChange={(value) => setMunicipalityFilter(value ? { id_municipio: value } : null)}
+                                      placeholder="Municipio"
+                                      searchPlaceholder="Buscar municipio..."
                                     />
+
                                   </th>
 
                                  <th className="p-3">
@@ -210,23 +231,15 @@ const TemplateManagement: React.FC<TemplateManagementProps> = ({ onToggleScene =
                                     />
                                   </th>
                 
-                                  <th className="p-3">
-                                    <input
-                                      type="number"
-                                      placeholder="Filtrar por disponibilidad"
-                                      className="bg-slate-200 p-1 rounded w-full text-sm"
-                                      value={municipalityIdFilter}
-                                      onChange={e => setMunicipalityIdFilter(e.target.value)}
-                                    />
-                                  </th>
+
                 
 
                 
                                   <th className="p-3">
                                     <select className="bg-slate-200 p-1 rounded w-full text-sm" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-                                      <option value="">Filtrar por exclusividad</option>
-                                      <option value="true">Confirmado</option>
-                                      <option value="false">Pendiente</option>
+                                      <option value="">Todas</option>
+                                      <option value="false">Originales</option>
+                                      <option value="true">Copia</option>
                                     </select>
                                   </th>
                                 </tr>
@@ -246,40 +259,29 @@ const TemplateManagement: React.FC<TemplateManagementProps> = ({ onToggleScene =
                                       {error}
                                     </td>
                                   </tr>
-                                ) : atributos.length === 0 ? (
+                                ) : plantillas.length === 0 ? (
                                   <tr>
                                     <td colSpan={6} className="p-8 text-center text-slate-400 h-64">
-                                      No se encontraron atributos para estos filtros.
+                                      No se encontraron plantillas para estos filtros.
                                     </td>
                                   </tr>
                                 ) : (
-                                  atributos.map((row, index) => (
+                                  plantillas.map((row, index) => (
                                     <tr
-                                      key={row.id_atributo}
+                                      key={row.id_plantilla}
                                       className="hover:bg-slate-50 transition-colors cursor-pointer"
-                                      onClick={() => navigate(`/atributo/${row.id_atributo}`)}
+                                      onClick={() => navigate(`/plantilla/${row.id_plantilla}`)}
                                     >
                                       <td className="p-4 text-center text-slate-500 font-mono">{(page - 1) * LIMIT + index + 1}</td>
                 
-                                      <td className="p-4 font-medium text-slate-700">{row.id_atributo}</td>
+                                      <td className="p-4 font-medium text-slate-700">{row.nombre}</td>
                 
-                                      <td className="p-4 text-slate-600">{row.nombre}</td>
-                
+                                      <td className="p-4 text-slate-600">{municipalidades[row.id_municipio] || "Especial" }</td>
                 
                                       <td className="p-4 text-slate-600">{formatDate(row.created_at)}</td>
-                
-                                      <td className="p-4">
-                                        <span
-                                          className={`px-2 py-1 rounded text-xs font-medium border
-                                                                    ${
-                                                                      row.duplicable
-                                                                        ? 'bg-green-50 text-green-700 border-green-200'
-                                                                        : 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                                                                    }`}
-                                        >
-                                          {row.duplicable ? 'Duplicable' : 'No duplicable'}
-                                        </span>
-                                      </td>
+
+                                      <td className="p-4 text-slate-600">{row.es_copia_de ? "Copia" : "Original"}</td>
+
                                     </tr>
                                   ))
                                 )}
@@ -288,10 +290,10 @@ const TemplateManagement: React.FC<TemplateManagementProps> = ({ onToggleScene =
                           </div>
                     
                     {/* --- PAGINATION FOOTER --- */}
-                    {!error && atributos.length > 0 && (
+                    {!error && plantillas.length > 0 && (
                         <div className="flex items-center justify-between border-t p-4 bg-slate-50">
                             <div className="text-xs text-slate-500">
-                                Mostrando página {meta.page} de {meta.last_page} (Total: {meta.total} atributos)
+                                Mostrando página {meta.page} de {meta.last_page} (Total: {meta.total} plantillas)
                             </div>
                             
                             <div className="flex items-center gap-1">
