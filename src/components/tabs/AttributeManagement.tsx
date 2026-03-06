@@ -51,7 +51,6 @@ const AttributeManagement: React.FC<AttributeManagementProps> = ({ onToggleScene
   const [nameFilter, setNameFilter] = useState<string>('');
   const [isEliminating, setIsEliminating] = useState<boolean>(false);
   const [typeFilter, setTypeFilter] = useState<AttributeType>();
-  console.log('Current type filter:', typeFilter);
   const [statusFilter, setStatusFilter] = useState<boolean | null>(null);
   const [selectedAtributos, setSelectedAtributos] = useState<Set<number>>(new Set());
 
@@ -65,6 +64,7 @@ const AttributeManagement: React.FC<AttributeManagementProps> = ({ onToggleScene
           page: page.toString(),
           limit: LIMIT.toString(),
         });
+
         if (nameFilter) params.append('nombre', nameFilter);
         if (typeFilter) {
           // Convert type name to corresponding numeric ID
@@ -72,7 +72,7 @@ const AttributeManagement: React.FC<AttributeManagementProps> = ({ onToggleScene
           if (typeId) params.append('id_tipo', typeId);
         }
         if (statusFilter !== null) params.append('duplicable', statusFilter.toString());
-        console.log('Fetching attributes with params:', params.toString());
+        
         const response = await axios.get(`/attributes?${params.toString()}`);
         if (response.data) {
           console.log('Fetched attributes:', response.data);

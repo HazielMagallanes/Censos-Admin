@@ -1,6 +1,9 @@
-import React, { useState } from "react";
-import { Trash2, ChevronUp, ChevronDown, CheckSquare, Square, X } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Trash2, CheckSquare, Square, X, GripVertical } from "lucide-react";
+import axios from "axios";
 import { Button } from "@/components/ui/shadcn/button";
+import ComboBox from "../ui/own/ComboBox";
+import { AttributeType } from "@/types/tipos";
 
 // --- INTERFACES ---
 interface Atributo {
@@ -20,23 +23,28 @@ interface CategoriaForm {
     atributos: Atributo[];
 }
 
+interface Municipality {
+    id_municipio: number;
+    nombre: string;
+}
+
 interface CreateTemplateProps {
     onBack: () => void;
 }
 
-// Mock data for the selection list
-const MOCK_AVAILABLE_ATTRIBUTES: Atributo[] = [
-    { id_atributo: 1, nombre: "Nombre del encuestado", id_tipo: 1, duplicable: false, plantilla: false, created_at: "2024-01-01", updated_at: "2024-01-01" },
-    { id_atributo: 2, nombre: "DNI", id_tipo: 2, duplicable: false, plantilla: false, created_at: "2024-01-01", updated_at: "2024-01-01" },
-    { id_atributo: 3, nombre: "Fecha de nacimiento", id_tipo: 3, duplicable: false, plantilla: false, created_at: "2024-01-01", updated_at: "2024-01-01" },
-    { id_atributo: 4, nombre: "Observaciones", id_tipo: 1, duplicable: true, plantilla: false, created_at: "2024-01-01", updated_at: "2024-01-01" },
-];
 
 const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
     // --- STATE ---
     const [templateName, setTemplateName] = useState("");
+    const [descripcion, setDescripcion] = useState("");
     const [exclusividad, setExclusividad] = useState<boolean | null>(null);
-    const [error, setError] = useState<string | null>("Placeholder / Sitio para alerta");
+    const [error, setError] = useState<string | null>(null);
+    const [selectedMunicipality, setSelectedMunicipality] = useState<number>(0);
+    const [municipalities, setMunicipalities] = useState<Municipality[]>([]);
+    const [attributes, setAttributes] = useState<Atributo[]>([]);
+    
+    // Drag and Drop State
+    const [draggedItem, setDraggedItem] = useState<{ type: 'category' | 'attribute'; categoryId: string; attrId?: number } | null>(null);
     
     // Categorias/Agrupamientos State
     const [categorias, setCategorias] = useState<CategoriaForm[]>([
@@ -47,6 +55,35 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedAttributes, setSelectedAttributes] = useState<Set<number>>(new Set());
     const [targetCategoryId, setTargetCategoryId] = useState<string | null>(null);
+
+    // Fetch municipalities on component mount
+    useEffect(() => {
+        const fetchMunicipalities = async () => {
+            try {
+                const response = await axios.get('/municipalities');
+                setMunicipalities(response.data.municipalities || []);
+            } catch (err) {
+                console.error("Error fetching municipalities:", err);
+                // Fallback to empty array
+                setMunicipalities([]);
+            }
+        };
+        fetchMunicipalities();
+    }, []);
+    useEffect(() => {
+        const fetchAttributes = async () => {
+            try {
+                const response = await axios.get('/attributes');
+                setAttributes(response.data.attributes || []);
+            } catch (err) {
+                console.error("Error fetching attributes:", err);
+                // Fallback to empty array
+                setAttributes([]);
+            }
+        };
+        fetchAttributes();
+    }, []);
+    
 
     // --- HANDLERS: Form Structure ---
     const handleAddAgrupamiento = () => {
@@ -86,6 +123,62 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
         setIsModalOpen(true);
     };
 
+    // --- HANDLERS: Drag and Drop ---
+    const handleDragStart = (type: 'category' | 'attribute', categoryId: string, attrId?: number) => {
+        setDraggedItem({ type, categoryId, attrId });
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+    };
+
+    const handleDropCategory = (targetCategoryId: string) => {
+        if (!draggedItem || draggedItem.type !== 'category') return;
+        if (draggedItem.categoryId === targetCategoryId) return;
+
+        const draggedCategoryIndex = categorias.findIndex(c => c.id === draggedItem.categoryId);
+        const targetCategoryIndex = categorias.findIndex(c => c.id === targetCategoryId);
+
+        if (draggedCategoryIndex === -1 || targetCategoryIndex === -1) return;
+
+        const newCategorias = [...categorias];
+        const [draggedCategory] = newCategorias.splice(draggedCategoryIndex, 1);
+        newCategorias.splice(targetCategoryIndex, 0, draggedCategory);
+
+        setCategorias(newCategorias);
+        setDraggedItem(null);
+    };
+
+    const handleDropAttribute = (targetCategoryId: string, targetAttrId: number) => {
+        if (!draggedItem || draggedItem.type !== 'attribute') return;
+        // Only allow dropping within the same category
+        if (draggedItem.categoryId !== targetCategoryId) return;
+        if (draggedItem.attrId === targetAttrId) return;
+
+        const categoryIndex = categorias.findIndex(c => c.id === targetCategoryId);
+        if (categoryIndex === -1) return;
+        if (!draggedItem.attrId) return;
+
+        const newCategorias = [...categorias];
+        
+        // Get the dragged attribute
+        const draggedAttrIndex = newCategorias[categoryIndex].atributos.findIndex(a => a.id_atributo === draggedItem.attrId);
+        if (draggedAttrIndex === -1) return;
+
+        const [draggedAttr] = newCategorias[categoryIndex].atributos.splice(draggedAttrIndex, 1);
+
+        // Insert into target position within the same category
+        const targetAttrIndex = newCategorias[categoryIndex].atributos.findIndex(a => a.id_atributo === targetAttrId);
+        if (targetAttrIndex !== -1) {
+            newCategorias[categoryIndex].atributos.splice(targetAttrIndex, 0, draggedAttr);
+        } else {
+            newCategorias[categoryIndex].atributos.push(draggedAttr);
+        }
+
+        setCategorias(newCategorias);
+        setDraggedItem(null);
+    };
+
     const toggleAttributeSelection = (id: number) => {
         const newSet = new Set(selectedAttributes);
         if (newSet.has(id)) newSet.delete(id);
@@ -96,7 +189,7 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
     const confirmAttributeSelection = () => {
         if (!targetCategoryId) return;
 
-        const attributesToAdd = MOCK_AVAILABLE_ATTRIBUTES.filter(attr => selectedAttributes.has(attr.id_atributo));
+        const attributesToAdd = attributes.filter(attr => selectedAttributes.has(attr.id_atributo));
         
         setCategorias(categorias.map(cat => {
             if (cat.id === targetCategoryId) {
@@ -113,27 +206,44 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
     };
 
     // --- HANDLERS: Save ---
-    const handleSave = () => {
+    const handleSave = async () => {
+        if (!templateName.trim() || !descripcion.trim()) return setError("Por favor, completa todos los campos obligatorios.");
+        
+        // Check if categories are empty
+        if (categorias.length === 0) return setError("Debe agregar al menos un agrupamiento.");
+        
+        // Check if all categories are empty of attributes
+        const hasAttributes = categorias.some(cat => cat.atributos.length > 0);
+        if (!hasAttributes) return setError("Debe agregar al menos un atributo a los agrupamientos.");
+        
+        // If exclusive, cannot have a municipality
+        if (exclusividad === true && selectedMunicipality !== 0) {
+            return setError("Las plantillas especiales no pueden estar asociadas a una municipalidad.");
+        }
+        
         // Here we format the state to match your Prisma backend structure
         const payload = {
             nombre: templateName,
-            descripcion: "", // Add a description state if needed
+            descripcion: descripcion,
             es_copia_de: null,
-            id_municipio: null,
+            id_municipio: selectedMunicipality || null,
             categorias: categorias.map(cat => ({
                 nombre: cat.nombre,
                 descripcion: "", // Default or add field
-                atributos: cat.atributos.map(attr => ({
-                    nombre: attr.nombre,
-                    descripcion: "",
-                    recomendaciones: "",
-                    obligatorio: false,
-                    duplicable: attr.duplicable,
-                    id_tipo: attr.id_tipo
-                }))
+                atributos: cat.atributos.map(attr => attr.id_atributo)
             }))
         };
-
+        try {
+            await axios.post('/templates', payload).then(response => {
+                if (response.status === 200) {
+                    onBack();
+                }
+                 
+            });
+        } catch (error) {
+            console.error("Error al crear la plantilla:", error);
+            setError("Ocurrió un error al guardar la plantilla. Por favor, intenta nuevamente.");
+        }
         console.log("Saving template payload:", payload);
         // axios.post('/plantillas', payload).then(...)
     };
@@ -168,9 +278,27 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
                             <input
                                 type="text"
                                 placeholder="Entrada de texto"
-                                className="w-full border border-slate-200 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 text-slate-600"
+                                className="w-full border border-slate-200 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 text-slate-600 mb-4"
                                 value={templateName}
                                 onChange={(e) => setTemplateName(e.target.value)}
+                            />
+
+                            <label className="block text-sm font-medium text-sky-700 mb-1">Descripción</label>
+                            <textarea
+                                placeholder="Describe la plantilla..."
+                                className="w-full border border-slate-200 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500 text-slate-600 mb-4 resize-none"
+                                rows={3}
+                                value={descripcion}
+                                onChange={(e) => setDescripcion(e.target.value)}
+                            />
+
+                            <label className="block text-sm font-medium text-sky-700 mb-1">Municipalidad</label>
+                            <ComboBox
+                                options={municipalities}
+                                value={selectedMunicipality}
+                                onChange={(value) => setSelectedMunicipality(value)}
+                                placeholder="Seleccionar municipalidad..."
+                                searchPlaceholder="Buscar municipalidad..."
                             />
                         </div>
 
@@ -180,10 +308,25 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
                             
                             <div className="flex flex-col gap-4">
                                 {categorias.map((categoria) => (
-                                    <div key={categoria.id} className="flex flex-col gap-2">
+                                    <div 
+                                        key={categoria.id} 
+                                        className="flex flex-col gap-2"
+                                    >
                                         
                                         {/* Agrupamiento Header */}
-                                        <div className="flex items-center bg-white border border-slate-200 rounded-md">
+                                        <div 
+                                            className={`flex items-center bg-white border rounded-md transition-all ${draggedItem?.type === 'category' && draggedItem?.categoryId === categoria.id ? 'opacity-50 border-sky-400' : 'border-slate-200'}`}
+                                            draggable
+                                            onDragStart={() => handleDragStart('category', categoria.id)}
+                                            onDragOver={handleDragOver}
+                                            onDrop={(e) => {
+                                                e.stopPropagation();
+                                                handleDropCategory(categoria.id);
+                                            }}
+                                        >
+                                            <div className="p-3 text-slate-400 cursor-grab active:cursor-grabbing">
+                                                <GripVertical className="w-5 h-5" />
+                                            </div>
                                             <input 
                                                 type="text"
                                                 className="flex-1 p-3 text-sm text-sky-600/80 font-medium focus:outline-none bg-transparent"
@@ -194,24 +337,27 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
                                                 <button onClick={() => handleRemoveAgrupamiento(categoria.id)} className="p-3 text-slate-400 hover:text-red-500 hover:bg-slate-50 border-r border-slate-200 transition-colors">
                                                     <Trash2 className="w-5 h-5" />
                                                 </button>
-                                                <div className="flex flex-col bg-slate-50">
-                                                    <button className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-200 border-b border-slate-200 transition-colors">
-                                                        <ChevronUp className="w-4 h-4" />
-                                                    </button>
-                                                    <button className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors">
-                                                        <ChevronDown className="w-4 h-4" />
-                                                    </button>
-                                                </div>
                                             </div>
                                         </div>
 
                                         {/* Nested Attributes */}
                                         {categoria.atributos.map((atributo) => (
-                                            <div key={`${categoria.id}-${atributo.id_atributo}`} className="flex items-center bg-white border border-slate-200 rounded-md ml-4 relative">
-                                                {/* Left structural border indicator */}
-                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1/2 bg-slate-300 rounded-r-md"></div>
+                                            <div 
+                                                key={`${categoria.id}-${atributo.id_atributo}`} 
+                                                className={`flex items-center bg-white border rounded-md ml-4 transition-all ${draggedItem?.type === 'attribute' && draggedItem?.categoryId === categoria.id && draggedItem?.attrId === atributo.id_atributo ? 'opacity-50 border-sky-400' : 'border-slate-200'}`}
+                                                draggable
+                                                onDragStart={() => handleDragStart('attribute', categoria.id, atributo.id_atributo)}
+                                                onDragOver={handleDragOver}
+                                                onDrop={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDropAttribute(categoria.id, atributo.id_atributo);
+                                                }}
+                                            >
+                                                <div className="p-3 text-slate-400 cursor-grab active:cursor-grabbing">
+                                                    <GripVertical className="w-5 h-5" />
+                                                </div>
                                                 
-                                                <div className="flex-1 p-3 pl-5 text-sm text-sky-600/80 bg-transparent">
+                                                <div className="flex-1 p-3 text-sm text-sky-600/80 bg-transparent">
                                                     {atributo.nombre}
                                                 </div>
                                                 
@@ -219,14 +365,6 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
                                                     <button onClick={() => handleRemoveAtributo(categoria.id, atributo.id_atributo)} className="p-3 text-slate-400 hover:text-red-500 hover:bg-slate-50 border-r border-slate-200 transition-colors">
                                                         <Trash2 className="w-5 h-5" />
                                                     </button>
-                                                    <div className="flex flex-col bg-slate-50">
-                                                        <button className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-200 border-b border-slate-200 transition-colors">
-                                                            <ChevronUp className="w-4 h-4" />
-                                                        </button>
-                                                        <button className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors">
-                                                            <ChevronDown className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
@@ -343,7 +481,7 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
                         </div>
 
                         <div className="p-4 max-h-[60vh] overflow-y-auto flex flex-col gap-2">
-                            {MOCK_AVAILABLE_ATTRIBUTES.map(attr => (
+                            {attributes.map(attr => (
                                 <div 
                                     key={attr.id_atributo} 
                                     onClick={() => toggleAttributeSelection(attr.id_atributo)}
@@ -356,7 +494,7 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
                                     )}
                                     <div className="flex-1">
                                         <p className="text-sm font-medium text-slate-700">{attr.nombre}</p>
-                                        <p className="text-xs text-slate-400">Tipo ID: {attr.id_tipo} {attr.duplicable ? "• Duplicable" : ""}</p>
+                                        <p className="text-xs text-slate-400">Tipo: {AttributeType[attr.id_tipo as keyof typeof AttributeType]} {attr.duplicable ? "• Duplicable" : ""}</p>
                                     </div>
                                 </div>
                             ))}
