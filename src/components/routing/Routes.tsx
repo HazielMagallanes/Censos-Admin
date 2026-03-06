@@ -9,6 +9,7 @@ import MuniManagement from '../tabs/MuniManagement';
 import FormAndCensus from '../tabs/FormAndCensus';
 import MyAccount from '../tabs/MyAccount';
 import TemplateAndAttribute from '../tabs/TemplateAndAttribute';
+import CreateTemplate from '../tabs/CreateTemplate';
 
 const Routes: React.FC = () => {
   const { token } = useAuth();
@@ -63,6 +64,22 @@ const Routes: React.FC = () => {
           element: (
             <Panel>
               <TemplateAndAttribute />
+            </Panel>
+          ),
+        },
+        {
+          path: '/plantillas/crear',
+          element: (
+            <Panel>
+              <CreateTemplate onBack={() => window.history.back()} />
+            </Panel>
+          ),
+        },
+        {
+          path: '/plantilla/:templateId',
+          element: (
+            <Panel>
+              <CreateTemplate onBack={() => window.history.back()} />
             </Panel>
           ),
         },

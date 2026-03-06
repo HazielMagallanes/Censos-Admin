@@ -4,6 +4,7 @@ import axios from "axios";
 import { Button } from "@/components/ui/shadcn/button";
 import ComboBox from "../ui/own/ComboBox";
 import { AttributeType } from "@/types/tipos";
+import { useParams } from "react-router";
 
 // --- INTERFACES ---
 interface Atributo {
@@ -34,6 +35,8 @@ interface CreateTemplateProps {
 
 
 const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
+    const { templateId } = useParams<{ templateId?: string }>();
+    const isEditMode = !!templateId;
     // --- STATE ---
     const [templateName, setTemplateName] = useState("");
     const [descripcion, setDescripcion] = useState("");
@@ -42,6 +45,8 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
     const [selectedMunicipality, setSelectedMunicipality] = useState<number>(0);
     const [municipalities, setMunicipalities] = useState<Municipality[]>([]);
     const [attributes, setAttributes] = useState<Atributo[]>([]);
+    const [isLoading, setIsLoading] = useState<boolean>(isEditMode);
+    const [isBloqueado, setIsBloqueado] = useState<boolean>(false);
     
     // Drag and Drop State
     const [draggedItem, setDraggedItem] = useState<{ type: 'category' | 'attribute'; categoryId: string; attrId?: number } | null>(null);
@@ -83,6 +88,49 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
         };
         fetchAttributes();
     }, []);
+    
+    // Load template data if in edit mode
+    useEffect(() => {
+        if (isEditMode && templateId) {
+            const fetchTemplate = async () => {
+                try {
+                    const response = await axios.get(`/templates/${templateId}`);
+                    const template = response.data.template;
+                    
+                    // Check if template is blocked
+                    if (template.bloqueado) {
+                        setIsBloqueado(true);
+                        setError("Esta plantilla está bloqueada y no puede ser editada.");
+                    }
+                    
+                    // Populate form with template data
+                    setTemplateName(template.nombre);
+                    setDescripcion(template.descripcion || "");
+                    setSelectedMunicipality(template.id_municipio || 0);
+                    setExclusividad(template.es_copia_de ? false : null); // Adjust based on your logic
+                    
+                    // Populate categories and attributes
+                    if (response.data.categorias && response.data.categorias.length > 0) {
+                        const loadedCategorias: CategoriaForm[] = response.data.categorias.map((cat: any) => ({
+                            id: cat.id_categoria?.toString() || Math.random().toString(),
+                            nombre: cat.nombre,
+                            atributos: cat.atributos || []
+                        }));
+                        setCategorias(loadedCategorias);
+                    }
+                } catch (err) {
+                    console.error("Error fetching template:", err);
+                    setError("Error al cargar la plantilla.");
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            
+            fetchTemplate();
+        } else {
+            setIsLoading(false);
+        }
+    }, [isEditMode, templateId]);
     
 
     // --- HANDLERS: Form Structure ---
@@ -234,18 +282,24 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
             }))
         };
         try {
-            await axios.post('/templates', payload).then(response => {
+            if (isEditMode && templateId) {
+                // Update existing template
+                const response = await axios.put(`/templates/${templateId}`, payload);
                 if (response.status === 200) {
                     onBack();
                 }
-                 
-            });
+            } else {
+                // Create new template
+                const response = await axios.post('/templates', payload);
+                if (response.status === 200) {
+                    onBack();
+                }
+            }
         } catch (error) {
-            console.error("Error al crear la plantilla:", error);
+            console.error("Error al guardar la plantilla:", error);
             setError("Ocurrió un error al guardar la plantilla. Por favor, intenta nuevamente.");
         }
         console.log("Saving template payload:", payload);
-        // axios.post('/plantillas', payload).then(...)
     };
 
     return (
@@ -261,9 +315,28 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
                         Listado de plantillas
                     </span>
                     <span>&gt;</span>
-                    <span className="font-medium underline">Agregar nueva</span>
+                    <span className="font-medium underline">{isEditMode ? 'Editar plantilla' : 'Agregar nueva'}</span>
                 </div>
 
+                {isLoading ? (
+                    <div className="flex items-center justify-center h-96">
+                        <div className="text-center">
+                            <div className="text-slate-500 mb-2">Cargando plantilla...</div>
+                        </div>
+                    </div>
+                ) : isBloqueado ? (
+                    <div className="bg-red-50 border border-red-200 rounded-md p-6 text-center">
+                        <h2 className="text-xl font-semibold text-red-700 mb-2">Plantilla Bloqueada</h2>
+                        <p className="text-red-600 mb-6">Esta plantilla está bloqueada y no puede ser editada.</p>
+                        <Button 
+                            className="bg-sky-600 hover:bg-sky-700 text-white"
+                            onClick={onBack}
+                        >
+                            Volver al listado
+                        </Button>
+                    </div>
+                ) : (
+                    <>
                 {/* Main Content Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                     
@@ -272,7 +345,7 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
                         
                         {/* Title Section */}
                         <div>
-                            <h2 className="text-xl font-normal text-slate-800 mb-4 border-b pb-2">Creador de plantillas de censo</h2>
+                            <h2 className="text-xl font-normal text-slate-800 mb-4 border-b pb-2">{isEditMode ? 'Editor de plantilla de censo' : 'Creador de plantillas de censo'}</h2>
                             
                             <label className="block text-sm font-medium text-sky-700 mb-1">Nombre de la plantilla</label>
                             <input
@@ -445,13 +518,15 @@ const CreateTemplate: React.FC<CreateTemplateProps> = ({ onBack }) => {
                                     className="bg-[#2a86c4] hover:bg-[#20699c] text-white flex-1"
                                     onClick={handleSave}
                                 >
-                                    Guardar plantilla
+                                    {isEditMode ? 'Actualizar plantilla' : 'Guardar plantilla'}
                                 </Button>
                             </div>
                         </div>
 
                     </div>
                 </div>
+                    </>
+                )}
             </main>
 
             {/* --- MODAL FOR ATTRIBUTE SELECTION --- */}

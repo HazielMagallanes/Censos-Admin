@@ -19,6 +19,7 @@ interface Plantilla {
   es_copia_de: number | null;
   modifiedBy: string | null;
   descripcion: string | null;
+  bloqueado?: boolean;
 }
 
 interface MetaData {
@@ -108,16 +109,20 @@ const TemplateManagement: React.FC<TemplateManagementProps> = ({ onToggleScene =
 
     const handleDelete = async () => {
         try {
-            const selectedArray = Array.from(selectedAtributos);
+            // Filter out blocked templates from deletion
+            const selectableTemplate = Array.from(selectedAtributos).filter(id => {
+                const plantilla = plantillas.find(p => p.id_plantilla === id);
+                return !plantilla?.bloqueado;
+            });
 
-            if (selectedArray.length === 0) {
-                setError('No selecciono ningun plantilla para eliminar.');
+            if (selectableTemplate.length === 0) {
+                setError('No se pueden eliminar plantillas bloqueadas.');
                 setIsModalOpen(false);
                 return;
             }
 
-            console.log('Attempting to delete templates with IDs:', selectedArray);
-            const response = await axios.delete('/templates', { data: { ids: selectedArray } });
+            console.log('Attempting to delete templates with IDs:', selectableTemplate);
+            const response = await axios.delete('/templates', { data: { ids: selectableTemplate } });
             if (response.status === 200) {
                 setIsModalOpen(false);
                 setIsEliminating(false);
@@ -193,7 +198,7 @@ const TemplateManagement: React.FC<TemplateManagementProps> = ({ onToggleScene =
                     </div>
                     <div className="flex gap-2 items-center">
                         <Button 
-                        onClick={() => setIsCreating(true)}
+                        onClick={() => navigate('/plantillas/crear')}
                         className="bg-sky-700 text-white hover:bg-sky-800 gap-2">
                             <SquarePlus className="h-4 w-4" /> Agregar nuevo
                         </Button>
@@ -240,12 +245,12 @@ const TemplateManagement: React.FC<TemplateManagementProps> = ({ onToggleScene =
                                         type="checkbox"
                                         onChange={e => {
                                           if (e.target.checked) {
-                                            setSelectedAtributos(new Set(plantillas.map(p => p.id_plantilla)));
+                                            setSelectedAtributos(new Set(plantillas.filter(p => !p.bloqueado).map(p => p.id_plantilla)));
                                           } else {
                                             setSelectedAtributos(new Set());
                                           }
                                         }}
-                                        checked={selectedAtributos.size === plantillas.length && plantillas.length > 0}
+                                        checked={selectedAtributos.size === plantillas.filter(p => !p.bloqueado).length && plantillas.filter(p => !p.bloqueado).length > 0}
                                         className="cursor-pointer"
                                       />
                                     )}
@@ -320,9 +325,9 @@ const TemplateManagement: React.FC<TemplateManagementProps> = ({ onToggleScene =
                                   plantillas.map((row, index) => (
                                     <tr
                                       key={row.id_plantilla}
-                                      className={`transition-colors ${!isEliminating ? 'hover:bg-slate-50 cursor-pointer' : ''}`}
+                                      className={`transition-colors ${!isEliminating && !row.bloqueado ? 'hover:bg-slate-50 cursor-pointer' : ''} ${row.bloqueado ? 'bg-slate-100 opacity-60' : ''}`}
                                       onClick={() => {
-                                        if (!isEliminating) {
+                                        if (!isEliminating && !row.bloqueado) {
                                           navigate(`/plantilla/${row.id_plantilla}`);
                                         }
                                       }}
@@ -342,7 +347,8 @@ const TemplateManagement: React.FC<TemplateManagementProps> = ({ onToggleScene =
                                               setSelectedAtributos(newSelected);
                                             }}
                                             onClick={e => e.stopPropagation()}
-                                            className="cursor-pointer"
+                                            disabled={row.bloqueado}
+                                            className="cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                           />
                                         )}
                                       </td>
@@ -354,7 +360,12 @@ const TemplateManagement: React.FC<TemplateManagementProps> = ({ onToggleScene =
                 
                                       <td className="p-4 text-slate-600">{formatDate(row.created_at)}</td>
 
-                                      <td className="p-4 text-slate-600">{row.es_copia_de ? "Copia" : "Original"}</td>
+                                      <td className="p-4 text-slate-600">
+                                        {row.es_copia_de ? "Copia" : "Original"}
+                                        {row.bloqueado && (
+                                          <span className="ml-2 inline-block bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-medium">Bloqueado</span>
+                                        )}
+                                      </td>
 
                                     </tr>
                                   ))
