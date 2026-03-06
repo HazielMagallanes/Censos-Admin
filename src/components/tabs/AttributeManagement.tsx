@@ -296,8 +296,8 @@ const AttributeManagement: React.FC<AttributeManagementProps> = ({ onToggleScene
                       onChange={e => setStatusFilter(e.target.value === '' ? null : e.target.value === 'true')}
                     >
                       <option value="">Filtrar por propiedad</option>
-                      <option value="false">duplicable</option>
-                      <option value="true">no duplicable</option>
+                      <option value="true">Duplicable</option>
+                      <option value="false">No duplicable</option>
                     </select>
                   </th>
                 </tr>
