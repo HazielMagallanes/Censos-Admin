@@ -94,7 +94,6 @@ const CreateAttribute: React.FC<CreateAttributeProps> = ({ onBack }) => {
         duplicable: isDuplicable,
         obligatorio: isMandatory,                                                                                                                                  
         id_tipo: attributeType, 
-        id_categoria: 1, // HARDCODED CATEGORY ID NEEDS TO BE OPTIONAL ON BACKEND
         recomendaciones: dataList.length > 0 ? `[${dataList.map(item => item.name).join(",")}]` : "",
       });
       if (response.status === 200) {
