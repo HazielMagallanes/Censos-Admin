@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/shadcn/button";
 import { useNavigate } from "react-router";
 import CreateTemplate from "./CreateTemplate";
 import ComboBox from "../ui/own/ComboBox";
+import ConfirmationModal from "../ui/own/ConfirmationModal";
 
 // --- INTERFACES ---
 
@@ -38,6 +39,7 @@ const TemplateManagement: React.FC<TemplateManagementProps> = ({ onToggleScene =
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [isCreating, setIsCreating] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const navigate = useNavigate();
     // Paginación
     const [meta, setMeta] = useState<MetaData>({ total: 1, page: 1, last_page: 1 });
@@ -104,6 +106,34 @@ const TemplateManagement: React.FC<TemplateManagementProps> = ({ onToggleScene =
         setPage(1);
     }, [nameFilter, dateFilter, municipalityFilter, statusFilter]);
 
+    const handleDelete = async () => {
+        try {
+            const selectedArray = Array.from(selectedAtributos);
+
+            if (selectedArray.length === 0) {
+                setError('No selecciono ningun plantilla para eliminar.');
+                setIsModalOpen(false);
+                return;
+            }
+
+            console.log('Attempting to delete templates with IDs:', selectedArray);
+            const response = await axios.delete('/templates', { data: { ids: selectedArray } });
+            if (response.status === 200) {
+                setIsModalOpen(false);
+                setIsEliminating(false);
+                setSelectedAtributos(new Set());
+                setPage(1);
+            }
+            if (response.status === 403) {
+                setError('Uno o mas de los plantillas seleccionadas están en uso, por lo que no pueden ser eliminadas.');
+            }
+        } catch (error) {
+            setIsModalOpen(false);
+            setError('Error al eliminar los plantillas. Por favor, inténtalo de nuevo.');
+            console.error(error);
+        }
+    };
+
     const handlePageChange = (newPage: number) => {
         if (newPage >= 1 && newPage <= meta.last_page) setPage(newPage);
     };
@@ -169,7 +199,12 @@ const TemplateManagement: React.FC<TemplateManagementProps> = ({ onToggleScene =
                         </Button>
                         {isEliminating ? (
                             <>
-                                <Button className="bg-red-600 text-white hover:bg-red-700 gap-2">
+                                <Button
+                                    onClick={() => {
+                                        setIsModalOpen(true);
+                                    }}
+                                    className="bg-red-600 text-white hover:bg-red-700 gap-2"
+                                >
                                     Borrar
                                 </Button>
                                 <Button 
@@ -199,6 +234,22 @@ const TemplateManagement: React.FC<TemplateManagementProps> = ({ onToggleScene =
                             <table className="w-full text-sm text-left">
                               <thead className="bg-slate-100 text-slate-600">
                                 <tr>
+                                  <th className="p-3 text-center w-12">
+                                    {isEliminating && (
+                                      <input
+                                        type="checkbox"
+                                        onChange={e => {
+                                          if (e.target.checked) {
+                                            setSelectedAtributos(new Set(plantillas.map(p => p.id_plantilla)));
+                                          } else {
+                                            setSelectedAtributos(new Set());
+                                          }
+                                        }}
+                                        checked={selectedAtributos.size === plantillas.length && plantillas.length > 0}
+                                        className="cursor-pointer"
+                                      />
+                                    )}
+                                  </th>
                                   <th className="p-3 text-center">#</th>
                 
                                   <th className="p-3">
@@ -269,9 +320,32 @@ const TemplateManagement: React.FC<TemplateManagementProps> = ({ onToggleScene =
                                   plantillas.map((row, index) => (
                                     <tr
                                       key={row.id_plantilla}
-                                      className="hover:bg-slate-50 transition-colors cursor-pointer"
-                                      onClick={() => navigate(`/plantilla/${row.id_plantilla}`)}
+                                      className={`transition-colors ${!isEliminating ? 'hover:bg-slate-50 cursor-pointer' : ''}`}
+                                      onClick={() => {
+                                        if (!isEliminating) {
+                                          navigate(`/plantilla/${row.id_plantilla}`);
+                                        }
+                                      }}
                                     >
+                                      <td className="p-3 text-center w-12">
+                                        {isEliminating && (
+                                          <input
+                                            type="checkbox"
+                                            checked={selectedAtributos.has(row.id_plantilla)}
+                                            onChange={e => {
+                                              const newSelected = new Set(selectedAtributos);
+                                              if (e.target.checked) {
+                                                newSelected.add(row.id_plantilla);
+                                              } else {
+                                                newSelected.delete(row.id_plantilla);
+                                              }
+                                              setSelectedAtributos(newSelected);
+                                            }}
+                                            onClick={e => e.stopPropagation()}
+                                            className="cursor-pointer"
+                                          />
+                                        )}
+                                      </td>
                                       <td className="p-4 text-center text-slate-500 font-mono">{(page - 1) * LIMIT + index + 1}</td>
                 
                                       <td className="p-4 font-medium text-slate-700">{row.nombre}</td>
@@ -334,6 +408,31 @@ const TemplateManagement: React.FC<TemplateManagementProps> = ({ onToggleScene =
                         </div>
                     )}
                 </div>
+                {selectedAtributos.size === 0 && isModalOpen ? (
+                    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/40 px-4">
+                        <span className="text-white text-lg bg-red-600 px-4 py-2 rounded">
+                            No selecciono ningun plantilla para eliminar, por favor seleccione al menos un plantilla para proceder con la eliminación.
+                        </span>
+                        <button onClick={() => setIsModalOpen(false)} className="ml-4 px-4 py-2 bg-slate-800 text-white rounded hover:bg-slate-700">
+                            Cerrar
+                        </button>
+                    </div>
+                ) : (
+                    <ConfirmationModal
+                        isOpen={isModalOpen}
+                        onClose={() => setIsModalOpen(false)}
+                        onConfirm={handleDelete}
+                        title="Confirmar eliminación"
+                        description={
+                            <span>
+                                ¿Estás seguro de que deseas eliminar los <strong>{selectedAtributos.size}</strong> plantillas seleccionadas? Esta acción no se puede
+                                deshacer.
+                            </span>
+                        }
+                        cancelText="Cancelar"
+                        confirmText="Eliminar"
+                    />
+                )}
             </main>
         </div>
     )
