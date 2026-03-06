@@ -68,7 +68,7 @@ const AttributeManagement: React.FC<AttributeManagementProps> = ({ onToggleScene
         if (nameFilter) params.append('nombre', nameFilter);
         if (typeFilter) {
           // Convert type name to corresponding numeric ID
-          const typeId = Object.entries(AttributeType).find(([value]) => value === typeFilter)?.[0];
+          const typeId = Object.entries(AttributeType).find(([, value]) => value === typeFilter)?.[0];
           if (typeId) params.append('id_tipo', typeId);
         }
         if (statusFilter !== null) params.append('duplicable', statusFilter.toString());
