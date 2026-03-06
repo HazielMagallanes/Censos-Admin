@@ -72,14 +72,6 @@ const TemplateManagement: React.FC<TemplateManagementProps> = ({ onToggleScene =
                 if (statusFilter) params.append('es_copia_de', statusFilter);
                 const response = await axios.get(`/templates?${params.toString()}`); 
 
-                if (Object.keys(municipalidades).length === 0) {
-                  const munResponse = await axios.get('/municipalities');
-                  const munMap: Record<number, string> = {};
-                  munResponse.data.municipalities.forEach((mun: { id_municipio: number; nombre: string }) => {
-                    munMap[mun.id_municipio] = mun.nombre;
-                  });
-                  setMunicipalidades(munMap);
-                } 
                 console.log("Respuesta de la API:", response);
                 if (response.data) {
                     console.log("Datos recibidos:", response.data);
@@ -101,6 +93,23 @@ const TemplateManagement: React.FC<TemplateManagementProps> = ({ onToggleScene =
 
         return () => clearTimeout(timeoutId);
     }, [page, nameFilter, dateFilter,  municipalityFilter,  statusFilter]);
+
+    useEffect(() => {
+      const fetchMunicipalities = async () => {
+          try {
+              const munResponse = await axios.get('/municipalities');
+              const munMap: Record<number, string> = {};
+              munResponse.data.municipalities.forEach((mun: any) => {
+                  munMap[mun.id_municipio] = mun.nombre;
+              });
+              setMunicipalidades(munMap);
+          } catch (error) {
+              console.error("Error fetching municipalities:", error);
+          }
+      };
+      
+      fetchMunicipalities();
+    }, []);
 
     // Resetea a la página 1 cada vez que un filtro cambia
     useEffect(() => {
