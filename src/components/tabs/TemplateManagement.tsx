@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import {  ChevronDown, Loader2, ChevronLeft, ChevronRight, SquarePlus, Trash2} from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, SquarePlus, Trash2} from "lucide-react";
 import { Button } from "@/components/ui/shadcn/button";
 import { useNavigate } from "react-router";
 import CreateTemplate from "./CreateTemplate";

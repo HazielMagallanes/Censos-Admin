@@ -1,10 +1,10 @@
 export const AttributeType = {
-  1:"Text",
-  2:"Number",
-  3:"Long Text",
-  4:"Select",
-  5:"Confirmation",
-  7:"Location",
+  1:"Texto",
+  2:"Numerico",
+  3:"Texto largo",
+  4:"Selección",
+  5:"Confirmación",
+  7:"Ubicación",
 } as const;
 
 export type AttributeType = typeof AttributeType[keyof typeof AttributeType];
