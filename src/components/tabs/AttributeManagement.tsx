@@ -136,7 +136,7 @@ const AttributeManagement: React.FC<AttributeManagementProps> = ({ onToggleScene
       }
 
       console.log('Attempting to delete attributes with IDs:', selectableAtributos);
-      const response = await axios.delete('/attributes', { data: { ids: selectableAtributos } });
+      const response = await axios.delete('/attributes', { data: { id_atributos: selectableAtributos } });
       if (response.status === 200) {
         setIsModalOpen(false);
         setIsEliminating(false);
